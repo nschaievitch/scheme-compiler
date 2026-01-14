@@ -1,0 +1,1 @@
+(not (integer? (integer->char 28)))
