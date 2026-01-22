@@ -13,7 +13,7 @@ func tryParse(t *testing.T, source string, expected any) {
 	}
 
 	if !reflect.DeepEqual(prog, expected) {
-		t.Errorf("Unexpected parsing result. Expected %v, got %v instead", expected, prog)
+		t.Errorf("Unexpected parsing result parsing %s. Expected %v, got %v instead", source, expected, prog)
 	}
 }
 
@@ -86,4 +86,9 @@ func TestParsesSExp(t *testing.T) {
 func TestParsesNestedSExp(t *testing.T) {
 	tryParse(t, "(+ 1 (- 1 2))", SExp{[]Node{Identifier{"+"}, Uint{1}, SExp{[]Node{Identifier{"-"}, Uint{1}, Uint{2}}}}})
 	tryParse(t, "(+ (- 1 2) 1)", SExp{[]Node{Identifier{"+"}, SExp{[]Node{Identifier{"-"}, Uint{1}, Uint{2}}}, Uint{1}}})
+}
+
+func TestParsesLet(t *testing.T) {
+	tryParse(t, "(let (a 1) a)", Let{[]Binding{{Identifier{"a"}, Uint{1}}}, Identifier{"a"}})
+	tryParse(t, "(let (a 1) (b (+ 1 2)) (+ a b))", Let{[]Binding{{Identifier{"a"}, Uint{1}}, {Identifier{"b"}, SExp{[]Node{Identifier{"+"}, Uint{1}, Uint{2}}}}}, SExp{[]Node{Identifier{"+"}, Identifier{"a"}, Identifier{"b"}}}})
 }
