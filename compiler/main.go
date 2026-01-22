@@ -187,7 +187,7 @@ func (i Identifier) Compile(env Environment) ([]Word, error) {
 }
 
 func (p Parser) Peek() byte {
-	if p.Pos == p.Length {
+	if p.Pos >= p.Length {
 		return 0
 	}
 
@@ -216,7 +216,7 @@ func (p *Parser) ParseNumber() (uint64, error) {
 func (p *Parser) ParseIdentifier() (string, error) {
 	var nameBuilder strings.Builder
 
-	for !unicode.IsSpace(rune(p.Peek())) {
+	for !unicode.IsSpace(rune(p.Peek())) && p.Peek() != 0 {
 		nameBuilder.WriteByte(p.Peek())
 		p.Pos += 1
 	}
