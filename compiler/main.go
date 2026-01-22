@@ -244,7 +244,7 @@ func (p *Parser) ParseSExp() ([]Node, error) {
 	}
 
 	if p.Peek() == 0 {
-		return []Node{}, fmt.Errorf("Unexpected EOF, expected ')'")
+		return []Node{}, fmt.Errorf("Unexpected EOF, expected ')', children %v", children)
 	}
 
 	p.Pos += 1
@@ -268,13 +268,18 @@ func (p *Parser) Parse() (Node, error) {
 			p.Pos += 1
 
 			if p.Peek() != 0 {
-				return Char{p.Peek()}, nil
+				c := p.Peek()
+				p.Pos += 1
+				return Char{c}, nil
 			} else {
+				p.Pos += 1
 				return nil, fmt.Errorf("Unexpected end of input\n")
 			}
 		case 't':
+			p.Pos += 1
 			return Boolean{true}, nil
 		case 'f':
+			p.Pos += 1
 			return Boolean{false}, nil
 		default:
 			return nil, fmt.Errorf("Unknown literal #%c", p.Peek())

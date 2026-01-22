@@ -9,7 +9,7 @@ func tryParse(t *testing.T, source string, expected any) {
 	prog, err := SchemeParse(source)
 
 	if err != nil {
-		t.Errorf("Unexpected error while parsing string %s: expected %v, got the following error %e", source, expected, err)
+		t.Fatalf("Unexpected error while parsing string %s: expected %v, got the following error %e", source, expected, err)
 	}
 
 	if !reflect.DeepEqual(prog, expected) {
@@ -79,6 +79,7 @@ func TestParsesIdentifier(t *testing.T) {
 func TestParsesSExp(t *testing.T) {
 	tryParse(t, "(1)", SExp{[]Node{Uint{1}}})
 	tryParse(t, "(integer->char 2)", SExp{[]Node{Identifier{"integer->char"}, Uint{2}}})
+	tryParse(t, "(char->integer #\\a)", SExp{[]Node{Identifier{"char->integer"}, Char{'a'}}})
 	tryParse(t, "(+ 1 2)", SExp{[]Node{Identifier{"+"}, Uint{1}, Uint{2}}})
 }
 
