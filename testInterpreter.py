@@ -10,8 +10,9 @@ def testCase(source, expected):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
+
     if comp.returncode != 0:
-        print(f"Error compiling {source}: {comp.stderr}")
+        print(f"Error compiling {source}: {str(comp.stderr)}")
         return False
 
     interp = subprocess.run(
@@ -19,13 +20,16 @@ def testCase(source, expected):
         input=comp.stdout,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        check=True,
         shell=True
     )
+
+    if interp.returncode != 0:
+        print(f"Error interpreting {source}: {str(interp.stderr)}")
+        return False
     
     output = interp.stdout.decode("utf-8").strip()
     if output != str(expected):
-        print(f"Unexpected output: expected {expected}, got {output} instead")
+        print(f"Unexpected output for case {source}: expected {expected}, got {output} instead")
         return False
     
     return True
@@ -62,7 +66,12 @@ testCases = [
     ("(= #t #f)", "#f"),
     ("(not (integer? (integer->char 28)))", "#t"),
     ("(= (- 10 8) (+ 1 1))", "#t"),
-    ("(= 10 (char->integer (integer->char 10)))", "#t")
+    ("(= 10 (char->integer (integer->char 10)))", "#t"),
+    ("(let (a 1) a)", 1),
+    ("(let (a 1) (b 2) (+ a b))", 3),
+    ("(let (a (+ 1 2)) (b 10) (- b a))", 7),
+    ("(let (a (let (c 10) c)) (b 22) (- b a))", 12),
+    ("(let (a 42) (let (b a) b))", 42),
 ]
 
 passed = 0

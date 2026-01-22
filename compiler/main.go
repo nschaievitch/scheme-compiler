@@ -5,18 +5,9 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
-	"strings"
-	"unicode"
 )
 
 type Word uint64
-
-type Parser struct {
-	Source string
-	Pos    int
-	Length int
-}
 
 type Compiler struct {
 	Code []Word
@@ -41,6 +32,7 @@ const (
 	MINUS
 	LESS_THAN
 	EQUALP
+	LOAD_VAR
 )
 
 const FIXNUM_MASK = 0b11
@@ -55,10 +47,10 @@ const BOOLEAN_MASK = 0b1111111
 const BOOLEAN_TAG = 0b0011111
 const BOOLEAN_SHIFT = 7
 
-type Environment interface{}
+type Environment map[Identifier]int
 
 type Node interface {
-	Compile(env Environment) ([]Word, error)
+	Compile(env *Environment, stackIndex *int) ([]Word, error)
 }
 
 type Uint struct {
@@ -73,8 +65,9 @@ func (u Uint) Box() (Word, error) {
 	return Word(u.Value << FIXNUM_SHIFT), nil
 }
 
-func (u Uint) Compile(env Environment) ([]Word, error) {
+func (u Uint) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	boxed, e := u.Box()
+	*stackIndex += 1
 	return []Word{LOAD64, boxed}, e
 }
 
@@ -91,7 +84,8 @@ func (c Char) Box() (w Word) {
 	return
 }
 
-func (c Char) Compile(env Environment) ([]Word, error) {
+func (c Char) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	*stackIndex += 1
 	return []Word{LOAD_CHAR, c.Box()}, nil
 }
 
@@ -112,7 +106,8 @@ func (b Boolean) Box() (w Word) {
 	return
 }
 
-func (b Boolean) Compile(env Environment) ([]Word, error) {
+func (b Boolean) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	*stackIndex += 1
 	return []Word{LOAD_BOOL, b.Box()}, nil
 }
 
@@ -120,7 +115,7 @@ type SExp struct {
 	Children []Node
 }
 
-func (s SExp) Compile(env Environment) ([]Word, error) {
+func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	ws := make([]Word, 0)
 
 	if len(s.Children) == 0 {
@@ -135,7 +130,7 @@ func (s SExp) Compile(env Environment) ([]Word, error) {
 	}
 
 	for i := len(s.Children) - 1; i >= 0; i-- {
-		childrenWords, err := s.Children[i].Compile(env)
+		childrenWords, err := s.Children[i].Compile(env, stackIndex)
 
 		if err != nil {
 			return []Word{}, err
@@ -151,7 +146,7 @@ type Identifier struct {
 	Name string
 }
 
-func (i Identifier) Compile(env Environment) ([]Word, error) {
+func (i Identifier) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	switch i.Name {
 	case "add1":
 		return []Word{ADD1}, nil
@@ -172,143 +167,80 @@ func (i Identifier) Compile(env Environment) ([]Word, error) {
 	case "boolean?":
 		return []Word{BOOLEANP}, nil
 	case "+":
+		*stackIndex -= 1
 		return []Word{PLUS}, nil
 	case "*":
+		*stackIndex -= 1
 		return []Word{TIMES}, nil
 	case "-":
+		*stackIndex -= 1
 		return []Word{MINUS}, nil
 	case "<":
+		*stackIndex -= 1
 		return []Word{LESS_THAN}, nil
 	case "=":
+		*stackIndex -= 1
 		return []Word{EQUALP}, nil
 	default:
-		return []Word{}, fmt.Errorf("Unknown identifier %s", i.Name)
+		si, ok := (*env)[i]
+
+		if !ok {
+			return []Word{}, fmt.Errorf("Unknown identifier %s", i.Name)
+		}
+
+		*stackIndex += 1
+		return []Word{LOAD_VAR, Word(si)}, nil
 	}
 }
 
-func (p Parser) Peek() byte {
-	if p.Pos >= p.Length {
-		return 0
-	}
-
-	return p.Source[p.Pos]
+type Binding struct {
+	Identifier Identifier
+	Value      Node
 }
 
-func (p *Parser) SkipWhitespace() {
-	for unicode.IsSpace(rune(p.Peek())) {
-		p.Pos += 1
-	}
+type Let struct {
+	Bindings []Binding
+	Body     Node
 }
 
-func (p *Parser) ParseNumber() (uint64, error) {
-	var number_string strings.Builder
-
-	for unicode.IsDigit(rune(p.Peek())) {
-		number_string.WriteRune(rune(p.Peek()))
-		p.Pos += 1
-	}
-
-	num, e := strconv.ParseUint(number_string.String(), 10, 64)
-
-	return num, e
-}
-
-func (p *Parser) ParseIdentifier() (string, error) {
-	var nameBuilder strings.Builder
-
-	for !unicode.IsSpace(rune(p.Peek())) && p.Peek() != 0 {
-		nameBuilder.WriteByte(p.Peek())
-		p.Pos += 1
-	}
-
-	return nameBuilder.String(), nil
-}
-
-func (p *Parser) ParseSExp() ([]Node, error) {
-	if p.Peek() != '(' {
-		return []Node{}, fmt.Errorf("Invalid SExp starting with %c", p.Peek())
-	}
-
-	p.Pos += 1
-
-	children := []Node{}
-
-	for p.Peek() != ')' && p.Peek() != 0 {
-		node, err := p.Parse()
+func (l Let) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	code := []Word{}
+	// Evaluate bindings and save stack positions
+	for _, b := range l.Bindings {
+		val, err := b.Value.Compile(env, stackIndex)
 
 		if err != nil {
-			return []Node{}, err
+			return []Word{}, err
 		}
 
-		children = append(children, node)
+		code = append(code, val...)
+
+		(*env)[b.Identifier] = *stackIndex - 1
 	}
 
-	if p.Peek() == 0 {
-		return []Node{}, fmt.Errorf("Unexpected EOF, expected ')', children %v", children)
+	body, err := l.Body.Compile(env, stackIndex)
+
+	if err != nil {
+		return []Word{}, err
 	}
 
-	p.Pos += 1
+	code = append(code, body...)
 
-	return children, nil
-}
-
-func (p *Parser) Parse() (Node, error) {
-	p.SkipWhitespace()
-	c := p.Peek()
-	switch c {
-	case 0:
-		return nil, fmt.Errorf("Unexpected end of input\n")
-	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-		num, e := p.ParseNumber()
-		return Uint{num}, e
-	case '#':
-		p.Pos += 1
-		switch p.Peek() {
-		case '\\':
-			p.Pos += 1
-
-			if p.Peek() != 0 {
-				c := p.Peek()
-				p.Pos += 1
-				return Char{c}, nil
-			} else {
-				p.Pos += 1
-				return nil, fmt.Errorf("Unexpected end of input\n")
-			}
-		case 't':
-			p.Pos += 1
-			return Boolean{true}, nil
-		case 'f':
-			p.Pos += 1
-			return Boolean{false}, nil
-		default:
-			return nil, fmt.Errorf("Unknown literal #%c", p.Peek())
-		}
-	case '(':
-		children, err := p.ParseSExp()
-
-		if err != nil {
-			return nil, err
-		}
-
-		return SExp{children}, nil
-	default:
-		name, err := p.ParseIdentifier()
-
-		if err != nil {
-			return nil, fmt.Errorf("Unexpected syntax: %s", p.Source[p.Pos:])
-		}
-
-		return Identifier{name}, nil
-	}
+	return code, nil
 }
 
 func (c *Compiler) Emit(w Word) {
 	c.Code = append(c.Code, w)
 }
 
-func (c *Compiler) Compile(n Node, e Environment) error {
-	code, err := n.Compile(e)
+func (c *Compiler) Compile(n Node, e *Environment) error {
+	var stackIndex int
+
+	// We keep positive stack indexes instead of negative (counting from the bottom of the stack)
+	// We also count in 64bit words, not bytes
+	stackIndex = 0
+
+	code, err := n.Compile(e, &stackIndex)
 
 	if err != nil {
 		return err
@@ -319,7 +251,7 @@ func (c *Compiler) Compile(n Node, e Environment) error {
 	return nil
 }
 
-func (c *Compiler) CompileFunction(n Node, e Environment) error {
+func (c *Compiler) CompileFunction(n Node, e *Environment) error {
 	err := c.Compile(n, e)
 
 	if err != nil {
@@ -339,19 +271,6 @@ func (c Compiler) Serialize(writer io.Writer) {
 	}
 }
 
-func MakeParser(source string) Parser {
-	return Parser{
-		source,
-		0,
-		len(source),
-	}
-}
-
-func SchemeParse(source string) (Node, error) {
-	p := MakeParser(source)
-	return p.Parse()
-}
-
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -369,7 +288,9 @@ func main() {
 
 	c := Compiler{}
 
-	err = c.CompileFunction(program, nil)
+	env := make(Environment)
+
+	err = c.CompileFunction(program, &env)
 
 	check(err)
 

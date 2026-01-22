@@ -27,6 +27,7 @@ pub enum Op {
     MINUS,
     LESS_THAN,
     EQUALP,
+    LOAD_VAR
 }
 
 const FIXNUM_MASK: u64 = 0b11;
@@ -406,6 +407,15 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                     .ok_or(eyre!("Unexpected call to = with one argument"))?;
 
                 stack.push(box_boolean(val1 == val2))
+            }
+
+            Op::LOAD_VAR => {
+                let stack_index: usize = readword()?.try_into()?;
+
+                let val: u64 = *(stack.get(stack_index)              
+                    .ok_or(eyre!("Invalid variable load from bad position, tried to grab position {} from stack of length {}", stack_index, stack.len()))?);
+
+                stack.push(val.clone())
             }
         }
     }

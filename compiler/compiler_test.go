@@ -14,7 +14,9 @@ func tryCompile(t *testing.T, source string, expected []Word) {
 		t.Fatalf("Unexpected error while parsing string %s, got the following error %e", source, err)
 	}
 
-	err = c.CompileFunction(program, nil)
+	env := make(Environment)
+
+	err = c.CompileFunction(program, &env)
 
 	if err != nil {
 		t.Fatalf("Unexpected error while compiling string %s: expected %v, got the following error %e", source, expected, err)
@@ -53,4 +55,10 @@ func TestCompilesBinaryExpression(t *testing.T) {
 func TestCompilesNestedExpression(t *testing.T) {
 	tryCompile(t, "(+ 1 (+ 1 2))", []Word{LOAD64, 2 << 2, LOAD64, 1 << 2, PLUS, LOAD64, 1 << 2, PLUS, RETURN})
 	tryCompile(t, "(= (- 4 1) (+ 2 1))", []Word{LOAD64, 1 << 2, LOAD64, 2 << 2, PLUS, LOAD64, 1 << 2, LOAD64, 4 << 2, MINUS, EQUALP, RETURN})
+}
+
+func TestCompileLet(t *testing.T) {
+	tryCompile(t, "(let (a 1) a)", []Word{LOAD64, 1 << 2, LOAD_VAR, 0, RETURN})
+	tryCompile(t, "(let (a 1) (b 2) (+ a b))", []Word{LOAD64, 1 << 2, LOAD64, 2 << 2, LOAD_VAR, 1, LOAD_VAR, 0, PLUS, RETURN})
+	tryCompile(t, "(let (a (+ 1 2)) (b 10) (- b a))", []Word{LOAD64, 2 << 2, LOAD64, 1 << 2, PLUS, LOAD64, 10 << 2, LOAD_VAR, 0, LOAD_VAR, 1, MINUS, RETURN})
 }
