@@ -134,7 +134,7 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
 
     loop {
         let instr = read_op(readword()?)?;
-        dbg!(instr);
+        // dbg!(instr);
         match instr {
             Op::LOAD64 => {
                 let boxed_num = readword()?;
@@ -431,7 +431,7 @@ fn main() -> Result<()> {
 
     let ret = interpret(code)?;
 
-    dbg!(ret);
+    // dbg!(ret);
     let print_val = print_boxed(ret)?;
 
     println!("{}", print_val);
