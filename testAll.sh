@@ -6,12 +6,16 @@ cd interpreter && cargo build 2> /dev/null
 
 cd ../compiler && go build
 
-echo -e "\nTesting compiler"
+echo -e "\n----------------"
+echo -e "Testing compiler"
+echo -e "----------------\n"
 
 go test
 
 cd ..
 
-echo -e "\nTesting interpreter"
+echo -e "\n-------------------"
+echo -e "Testing interpreter"
+echo -e "-------------------\n"
 
 python3 testInterpreter.py
