@@ -121,26 +121,28 @@ fn print_boxed(boxed: u64) -> Result<String> {
     Err(eyre!("Invalid tagged value {}", boxed))
 }
 
+
+    fn readword(code: &[u64], pc: &mut usize) -> Result<u64> {
+        if *pc >= code.len() {
+            return Err(eyre!("Program ends without return"));
+        }
+
+        let word = code[*pc];
+        *pc += 1;
+        Ok(word)
+    }
+
 fn interpret(code: Vec<u64>) -> Result<u64> {
     let mut pc: usize = 0;
     let mut stack: Vec<u64> = Vec::new();
 
-    let mut readword = || -> Result<u64> {
-        if pc >= code.len().try_into()? {
-            return Err(eyre!("Program ends without return"));
-        }
-
-        let word = code[pc];
-        pc += 1;
-        Ok(word)
-    };
 
     loop {
-        let instr = read_op(readword()?)?;
-        // dbg!(instr);
+        let instr = read_op(readword(&code, &mut pc)?)?;
+        // dbg!(instr, pc);
         match instr {
             Op::LOAD64 => {
-                let boxed_num = readword()?;
+                let boxed_num = readword(&code, &mut pc)?;
                 if !check_boxed_number(boxed_num) {
                     return Err(eyre!("Invalid tagged number value {}", boxed_num));
                 }
@@ -149,7 +151,7 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
             }
 
             Op::LOAD_CHAR => {
-                let boxed_char = readword()?;
+                let boxed_char = readword(&code, &mut pc)?;
                 if !check_boxed_character(boxed_char) {
                     return Err(eyre!("Invalid tagged character value {}", boxed_char));
                 }
@@ -158,7 +160,7 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
             }
 
             Op::LOAD_BOOL => {
-                let boxed_boolean = readword()?;
+                let boxed_boolean = readword(&code, &mut pc)?;
                 if !check_boxed_boolean(boxed_boolean) {
                     return Err(eyre!("Invalid tagged boolean value {}", boxed_boolean));
                 }
@@ -412,7 +414,7 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
             }
 
             Op::LOAD_VAR => {
-                let stack_index: usize = readword()?.try_into()?;
+                let stack_index: usize = readword(&code, &mut pc)?.try_into()?;
 
                 let val: u64 = *(stack.get(stack_index)              
                     .ok_or(eyre!("Invalid variable load from bad position, tried to grab position {} from stack of length {}", stack_index, stack.len()))?);
@@ -429,23 +431,21 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                     let condition = read_boxed_boolean(val)?;
 
                     if !condition {
-                        let offset: usize = readword()?.try_into()?;
+                        let offset: usize = readword(&code, &mut pc)?.try_into()?;
 
                         pc += offset;
                     } else {
-                        readword();
+                        pc += 1;
                     }
                 } else { // if not #f, it's truthy
-                    readword();
+                    pc += 1;
                 }
             }
 
             Op::JUMP_FORWARD => {
-                let val: usize = stack
-                    .pop()
-                    .ok_or(eyre!("Unexpected call to JUMP_FORWARD without arguments"))?
-                    .try_into()?;
+                let offset: usize = readword(&code, &mut pc)?.try_into()?;
 
+                pc += offset;
             }
         }
     }

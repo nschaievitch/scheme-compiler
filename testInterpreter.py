@@ -24,7 +24,7 @@ def testCase(source, expected):
     )
 
     if interp.returncode != 0:
-        print(f"Error interpreting {source}: {str(interp.stderr)}")
+        print(f"Error interpreting {source}: {interp.stderr.decode("utf-8")}")
         return False
     
     output = interp.stdout.decode("utf-8").strip()
@@ -72,6 +72,15 @@ testCases = [
     ("(let (a (+ 1 2)) (b 10) (- b a))", 7),
     ("(let (a (let (c 10) c)) (b 22) (- b a))", 12),
     ("(let (a 42) (let (b a) b))", 42),
+    ("(if #t 1 2)", 1),
+    ("(if #f 1 2)", 2),
+    ("(if 1 1 2)", 1),
+    ("(if #\\a 1 2)", 1),
+    ("(if #t (+ 1 2) 1)", 3),
+    ("(if #f (+ 1 2) 1)", 1),
+    ("(if (= 10 10) (if #t 1 2) 3)", 1),
+    ("(if (= 10 10) (if #f 1 2) 3)", 2),
+    ("(let (a 10) (b 16) (if (< a b) a b))", 10)
 ]
 
 passed = 0
