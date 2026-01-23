@@ -6,6 +6,8 @@ RED   = "\x1b[31m"
 GREEN = "\x1b[32m"
 RESET = "\x1b[0m"
 
+ERROR = None
+
 COMPILER = "./compiler/compiler"
 INTERPRETER = "./interpreter/target/debug/interpreter"
 
@@ -29,6 +31,13 @@ def testCase(source, expected):
         shell=True
     )
 
+    if expected == ERROR:
+        if interp.returncode == 0:
+            print(f"{RED}Expected error interpreting {source}, got {interp.stdout.decode("utf-8").rstrip()} instead")
+            return False
+        else:
+            return True
+
     if interp.returncode != 0:
         print(f"{RED}Error interpreting {source}: {interp.stderr.decode("utf-8")}{RESET}")
         return False
@@ -49,14 +58,20 @@ testSuites = {
     ],
     "Unary functions": [
         ("(char->integer #\\a)", 97),
+        ("(char->integer 97)", ERROR),
         ("(integer->char 97)", "#\\a"),
+        ("(integer->char #t)", ERROR),
         ("(add1 10)", "11"),
+        ("(add1 #t)", ERROR),
         ("(sub1 10)", "9"),
+        ("(sub1 #t)", ERROR),
         ("(null? 1)", "#f"),
         ("(zero? 0)", "#t"),
         ("(zero? 1)", "#f"),
+        ("(zero? #t)", ERROR),
         ("(not #t)", "#f"),
         ("(not #f)", "#t"),
+        ("(not 1)", ERROR),
         ("(boolean? #f)", "#t"),
         ("(boolean? 10)", "#f"),
         ("(integer? 10)", "#t"),
@@ -64,10 +79,18 @@ testSuites = {
     ],
     "Binary functions": [
         ("(+ 1 2)", "3"),
+        ("(+ #f 2)", ERROR),
+        ("(+ 2 #f)", ERROR),
         ("(* 10 10)", "100"),
+        ("(* #f 2)", ERROR),
+        ("(* 2 #f)", ERROR),
         ("(- 10 8)", "2"),
+        ("(- #f 2)", ERROR),
+        ("(- 2 #f)", ERROR),
         ("(< 10 8)", "#f"),
         ("(< 1 8)", "#t"),
+        ("(< #f 2)", ERROR),
+        ("(< 2 #f)", ERROR),
         ("(= 1 1)", "#t"),
         ("(= 1 2)", "#f"),
         ("(= #\\a #\\a)", "#t"),
@@ -75,6 +98,7 @@ testSuites = {
         ("(= #f #f)", "#t"),
         ("(= #t #t)", "#t"),
         ("(= #t #f)", "#f"),
+        ("(= #t 1)", "#f")
     ],
     "Nested functions": [
         ("(not (integer? (integer->char 28)))", "#t"),

@@ -246,6 +246,13 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                     .pop()
                     .ok_or(eyre!("Unexpected call to zero? without arguments"))?;
 
+                if !check_boxed_number(val) {
+                    return Err(eyre!(
+                        "Called zero? on a value that is not a number: {}",
+                        print_boxed(val)?
+                    ));
+                }
+
                 if val == box_number(0)? {
                     stack.push(box_boolean(true));
                 } else {
