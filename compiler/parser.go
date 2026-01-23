@@ -118,10 +118,11 @@ func (p *Parser) Parse() (Node, error) {
 			return nil, err
 		}
 
-		let := Identifier{"let"}
+		let_id := Identifier{"let"}
+		if_id := Identifier{"if"}
 
 		// test if SExp is let binding
-		if len(children) > 0 && children[0] == let {
+		if len(children) > 0 && children[0] == let_id {
 			if len(children) < 3 {
 				return nil, fmt.Errorf("Invalid let form, not enough arguments %s", p.Source[p.Pos:])
 			}
@@ -150,6 +151,14 @@ func (p *Parser) Parse() (Node, error) {
 			}
 
 			return Let{bindings, children[len(children)-1]}, nil
+		}
+
+		if len(children) == 4 && children[0] == if_id {
+			return If{
+				children[1],
+				children[2],
+				children[3],
+			}, nil
 		}
 
 		return SExp{children}, nil

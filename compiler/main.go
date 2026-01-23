@@ -33,6 +33,8 @@ const (
 	LESS_THAN
 	EQUALP
 	LOAD_VAR
+	POP_JUMP_IF_FALSE
+	JUMP_FORWARD
 )
 
 const FIXNUM_MASK = 0b11
@@ -225,6 +227,53 @@ func (l Let) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	}
 
 	code = append(code, body...)
+
+	return code, nil
+}
+
+type If struct {
+	Condition   Node
+	Consequent  Node
+	Alternative Node
+}
+
+func (i If) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	cond, err := i.Condition.Compile(env, stackIndex)
+
+	if err != nil {
+		return []Word{}, err
+	}
+
+	cons, err := i.Consequent.Compile(env, stackIndex)
+
+	if err != nil {
+		return []Word{}, err
+	}
+
+	alt, err := i.Alternative.Compile(env, stackIndex)
+
+	if err != nil {
+		return []Word{}, err
+	}
+
+	code := []Word{}
+
+	// Run condition
+	code = append(code, cond...)
+
+	// Evaluate and jump accordingly
+	// We use offset from current PC
+	code = append(code, POP_JUMP_IF_FALSE)
+
+	code = append(code, Word(len(cons)+2))
+
+	code = append(code, cons...)
+
+	code = append(code, JUMP_FORWARD)
+
+	code = append(code, Word(len(alt)))
+
+	code = append(code, alt...)
 
 	return code, nil
 }

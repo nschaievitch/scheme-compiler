@@ -27,7 +27,9 @@ pub enum Op {
     MINUS,
     LESS_THAN,
     EQUALP,
-    LOAD_VAR
+    LOAD_VAR,
+    POP_JUMP_IF_FALSE,
+    JUMP_FORWARD
 }
 
 const FIXNUM_MASK: u64 = 0b11;
@@ -416,6 +418,34 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                     .ok_or(eyre!("Invalid variable load from bad position, tried to grab position {} from stack of length {}", stack_index, stack.len()))?);
 
                 stack.push(val.clone())
+            }
+
+            Op::POP_JUMP_IF_FALSE => {
+                let val = stack
+                    .pop()
+                    .ok_or(eyre!("Unexpected call to POP_JUMP_IF_FALSE without arguments"))?;
+
+                if check_boxed_boolean(val) {
+                    let condition = read_boxed_boolean(val)?;
+
+                    if !condition {
+                        let offset: usize = readword()?.try_into()?;
+
+                        pc += offset;
+                    } else {
+                        readword();
+                    }
+                } else { // if not #f, it's truthy
+                    readword();
+                }
+            }
+
+            Op::JUMP_FORWARD => {
+                let val: usize = stack
+                    .pop()
+                    .ok_or(eyre!("Unexpected call to JUMP_FORWARD without arguments"))?
+                    .try_into()?;
+
             }
         }
     }
