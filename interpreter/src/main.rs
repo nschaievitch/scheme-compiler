@@ -1,6 +1,6 @@
 use std::{
     io::{self, Read},
-    u64,
+    u64, vec,
 };
 
 use eyre::{Result, eyre};
@@ -33,6 +33,9 @@ pub enum Op {
     CONS,
     CAR,
     CDR,
+	VECTOR,
+	VECTOR_REF,
+	VECTOR_SET
 }
 
 const HEAP_SIZE: usize = 2 << 10;
@@ -76,6 +79,7 @@ define_tag_checker!(check_boxed_number, FIXNUM_MASK, FIXNUM_TAG);
 define_tag_checker!(check_boxed_character, CHAR_MASK, CHAR_TAG);
 define_tag_checker!(check_boxed_boolean, BOOLEAN_MASK, BOOLEAN_TAG);
 define_tag_checker!(check_boxed_pair_pointer, POINTER_MASK, PAIR_TAG);
+define_tag_checker!(check_boxed_vector_pointer, POINTER_MASK, VECTOR_TAG);
 
 fn read_boxed_number(boxed_num: u64) -> Result<u64> {
     Ok(boxed_num >> FIXNUM_SHIFT)
@@ -120,6 +124,11 @@ fn read_boxed_pointer(boxed_pointer: u64) -> Result<usize> {
 fn box_pair(pair_pointer: usize) -> u64 {
     let u: u64 = pair_pointer.try_into().unwrap();
     (u << POINTER_SHIFT) | PAIR_TAG
+}
+
+fn box_vector(vector_pointer: usize) -> u64 {
+    let u: u64 = vector_pointer.try_into().unwrap();
+    (u << POINTER_SHIFT) | VECTOR_TAG
 }
 
 fn print_boxed(boxed: u64) -> Result<String> {
@@ -521,6 +530,85 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                 let pair_pointer = read_boxed_pointer(val1)?;
 
                 stack.push(heap[pair_pointer + 1]);
+            }
+
+            Op::VECTOR => {
+                let vec_len: usize = readword(&code, &mut pc)?.try_into()?;
+                
+                if stack.len() < vec_len {
+                    return Err(eyre!("Invalid stack state; not enough values for vector length"));
+                }
+                
+                heap[heap_pointer] = vec_len.try_into()?;
+
+                for i in 1..=vec_len {
+                    heap[heap_pointer + i] = stack.pop().ok_or(eyre!("Error popping from stack to create vector"))?;
+                }
+                
+                stack.push(box_vector(heap_pointer));
+                heap_pointer += vec_len;
+
+            }
+
+            Op::VECTOR_REF => {
+                let vec_pointer = stack.pop().ok_or(eyre!("Invalid call to vector_ref"))?;
+
+                let vec_position_boxed = stack.pop().ok_or(eyre!("Invalid call to vector_ref"))?;
+
+                if !check_boxed_vector_pointer(vec_pointer) {
+                    return Err(eyre!("Invalid vector pointer {}", print_boxed(vec_pointer)?))
+                }
+
+                if !check_boxed_number(vec_position_boxed) {
+                    return Err(eyre!("Invalid vector position, is not a number {}", print_boxed(vec_position_boxed)?))
+                }
+
+                let pointer = read_boxed_pointer(vec_pointer)?;
+                let vec_len = heap[pointer];
+
+                let vec_position = read_boxed_number(vec_position_boxed)?;
+
+                if vec_position >= vec_len {
+                    return Err(eyre!("Attempted to read out of vector bounds: position {vec_position} in vector of length {vec_len}"))
+                }
+
+                let mut pos: usize = vec_position.try_into()?;
+                pos += pointer + 1;
+
+                stack.push(heap[pos]);
+            }
+
+            Op::VECTOR_SET => {
+                let vec_pointer = stack.pop().ok_or(eyre!("Invalid call to vector_set"))?;
+
+                let vec_position_boxed = stack.pop().ok_or(eyre!("Invalid call to vector_set"))?;
+
+                let vec_value = stack.pop().ok_or(eyre!("Invalid call to vector_set"))?;
+
+                if !check_boxed_vector_pointer(vec_pointer) {
+                    return Err(eyre!("Invalid vector pointer {}", print_boxed(vec_pointer)?))
+                }
+
+                if !check_boxed_number(vec_position_boxed) {
+                    return Err(eyre!("Invalid vector position, is not a number {}", print_boxed(vec_position_boxed)?))
+                }
+
+                let pointer = read_boxed_pointer(vec_pointer)?;
+                let vec_len = heap[pointer];
+
+                let vec_position = read_boxed_number(vec_position_boxed)?;
+
+                if vec_position >= vec_len {
+                    return Err(eyre!("Attempted to read out of vector bounds: position {vec_position} in vector of length {vec_len}"))
+                }
+
+                let mut pos: usize = vec_position.try_into()?;
+                pos += pointer + 1;
+
+                heap[pos] = vec_value;
+                
+                stack.push(vec_pointer);
+
             }
         }
     }

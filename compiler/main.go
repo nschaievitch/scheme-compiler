@@ -38,6 +38,9 @@ const (
 	CONS
 	CAR
 	CDR
+	VECTOR
+	VECTOR_REF
+	VECTOR_SET
 )
 
 const FIXNUM_MASK = 0b11
@@ -193,7 +196,12 @@ func (i Identifier) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 		return []Word{CAR}, nil
 	case "cdr":
 		return []Word{CDR}, nil
-
+	case "vector-ref":
+		*stackIndex -= 1
+		return []Word{VECTOR_REF}, nil
+	case "vector-set!":
+		*stackIndex -= 1 // returns a new pointer to the vector?
+		return []Word{VECTOR_SET}, nil
 	default:
 		si, ok := (*env)[i]
 
@@ -285,6 +293,30 @@ func (i If) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	code = append(code, Word(len(alt)))
 
 	code = append(code, alt...)
+
+	return code, nil
+}
+
+type Vector struct {
+	Children []Node
+}
+
+func (v Vector) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	code := []Word{}
+
+	for i := len(v.Children) - 1; i >= 0; i-- {
+		words, err := v.Children[i].Compile(env, stackIndex)
+
+		if err != nil {
+			return []Word{}, err
+		}
+
+		code = append(code, words...)
+	}
+
+	code = append(code, VECTOR, Word(len(v.Children)))
+
+	*stackIndex -= len(v.Children) - 1
 
 	return code, nil
 }

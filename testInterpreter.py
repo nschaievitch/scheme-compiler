@@ -138,6 +138,13 @@ testSuites = {
         ("(let (pair (cons 10 20)) (car pair)))", 10),
         ("(let (pair (cons 10 (cons 20 30))) (car (cdr pair))))", 20),
     ],
+    "Vector operations": [
+        ("(vector-ref (vector 1 2 3) 1)", 2),
+        ("(vector-ref (vector 1 2 3) 0)", 1),
+        ("(vector-ref (vector 1 2 3) 3)", ERROR),
+        ("(let (v (vector 1 2 3)) (vector-ref v 2))", 3),
+        ("(vector-ref (vector-set! (vector 1 2 3) 1 10) 1)", 10)
+    ]
 }
 
 passed = 0
