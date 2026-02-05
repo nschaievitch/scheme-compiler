@@ -35,6 +35,9 @@ const (
 	LOAD_VAR
 	POP_JUMP_IF_FALSE
 	JUMP_FORWARD
+	CONS
+	CAR
+	CDR
 )
 
 const FIXNUM_MASK = 0b11
@@ -183,6 +186,14 @@ func (i Identifier) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	case "=":
 		*stackIndex -= 1
 		return []Word{EQUALP}, nil
+	case "cons":
+		*stackIndex -= 1
+		return []Word{CONS}, nil
+	case "car":
+		return []Word{CAR}, nil
+	case "cdr":
+		return []Word{CDR}, nil
+
 	default:
 		si, ok := (*env)[i]
 

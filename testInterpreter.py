@@ -1,8 +1,8 @@
 import subprocess
 
 # wanted to make it look legit
-BOLD  = "\x1b[1m"
-RED   = "\x1b[31m"
+BOLD = "\x1b[1m"
+RED = "\x1b[31m"
 GREEN = "\x1b[32m"
 RESET = "\x1b[0m"
 
@@ -10,6 +10,7 @@ ERROR = None
 
 COMPILER = "./compiler/compiler"
 INTERPRETER = "./interpreter/target/debug/interpreter"
+
 
 def testCase(source, expected):
     comp = subprocess.run(
@@ -20,7 +21,7 @@ def testCase(source, expected):
     )
 
     if comp.returncode != 0:
-        print(f"{RED}Error compiling {source}: {comp.stderr.decode("utf-8")}{RESET}")
+        print(f"{RED}Error compiling {source}: {comp.stderr.decode('utf-8')}{RESET}")
         return False
 
     interp = subprocess.run(
@@ -28,26 +29,33 @@ def testCase(source, expected):
         input=comp.stdout,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        shell=True
+        shell=True,
     )
 
     if expected == ERROR:
         if interp.returncode == 0:
-            print(f"{RED}Expected error interpreting {source}, got {interp.stdout.decode("utf-8").rstrip()} instead")
+            print(
+                f"{RED}Expected error interpreting {source}, got {interp.stdout.decode('utf-8').rstrip()} instead"
+            )
             return False
         else:
             return True
 
     if interp.returncode != 0:
-        print(f"{RED}Error interpreting {source}: {interp.stderr.decode("utf-8")}{RESET}")
+        print(
+            f"{RED}Error interpreting {source}: {interp.stderr.decode('utf-8')}{RESET}"
+        )
         return False
-    
+
     output = interp.stdout.decode("utf-8").strip()
     if output != str(expected):
-        print(f"{RED}Unexpected output for case {source}: expected {expected}, got {output} instead{RESET}")
+        print(
+            f"{RED}Unexpected output for case {source}: expected {expected}, got {output} instead{RESET}"
+        )
         return False
-    
+
     return True
+
 
 testSuites = {
     "Literals": [
@@ -98,7 +106,7 @@ testSuites = {
         ("(= #f #f)", "#t"),
         ("(= #t #t)", "#t"),
         ("(= #t #f)", "#f"),
-        ("(= #t 1)", "#f")
+        ("(= #t 1)", "#f"),
     ],
     "Nested functions": [
         ("(not (integer? (integer->char 28)))", "#t"),
@@ -121,19 +129,26 @@ testSuites = {
         ("(if #f (+ 1 2) 1)", 1),
         ("(if (= 10 10) (if #t 1 2) 3)", 1),
         ("(if (= 10 10) (if #f 1 2) 3)", 2),
-        ("(let (a 10) (b 16) (if (< a b) a b))", 10)
-    ]
+        ("(let (a 10) (b 16) (if (< a b) a b))", 10),
+    ],
+    "cons/car/cdr": [
+        ("(car (cons 1 2))", 1),
+        ("(cdr (cons 1 2))", 2),
+        ("(cdr (car (cons (cons 1 2) 3)))", 2),
+        ("(let (pair (cons 10 20)) (car pair)))", 10),
+        ("(let (pair (cons 10 (cons 20 30))) (car (cdr pair))))", 20),
+    ],
 }
 
 passed = 0
 total = 0
 
-for (testSuite, cases) in testSuites.items():
+for testSuite, cases in testSuites.items():
     print(f"{BOLD}{testSuite}: {RESET}")
 
     passLocal = 0
 
-    for (source, expected) in cases:
+    for source, expected in cases:
         if testCase(source, expected):
             passLocal += 1
 
@@ -142,10 +157,8 @@ for (testSuite, cases) in testSuites.items():
     else:
         print(RED)
     print(f"\t passed {passLocal}/{len(cases)}{RESET}\n")
-    
 
     passed += passLocal
     total += len(cases)
 
 print(f"{BOLD}\n\nPassed {passed} out of {total}{RESET}")
-    
