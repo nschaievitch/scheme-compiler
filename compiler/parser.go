@@ -79,6 +79,41 @@ func (p *Parser) ParseSExp() ([]Node, error) {
 	return children, nil
 }
 
+func (p *Parser) ParseString() ([]Node, error) {
+	if p.Peek() != '"' {
+		return []Node{}, fmt.Errorf("Invalid string starting with %c", p.Peek())
+	}
+
+	p.Pos += 1
+
+	children := []Node{}
+
+	for p.Peek() != '"' && p.Peek() != 0 {
+		if p.Peek() == '\\' {
+			p.Pos += 1
+			if p.Peek() == 'n' {
+				children = append(children, Char{'\n'})
+			} else if p.Peek() == 't' {
+				children = append(children, Char{'\t'})
+			} else {
+				children = append(children, Char{p.Peek()})
+			}
+		} else {
+			children = append(children, Char{p.Peek()})
+		}
+
+		p.Pos += 1
+	}
+
+	if p.Peek() == 0 {
+		return []Node{}, fmt.Errorf("Unexpected EOF, expected '\"'")
+	}
+
+	p.Pos += 1
+
+	return children, nil
+}
+
 func (p *Parser) Parse() (Node, error) {
 	p.SkipWhitespace()
 	c := p.Peek()
@@ -88,6 +123,9 @@ func (p *Parser) Parse() (Node, error) {
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		num, e := p.ParseNumber()
 		return Uint{num}, e
+	case '"':
+		characters, e := p.ParseString()
+		return String{characters}, e
 	case '#':
 		p.Pos += 1
 		switch p.Peek() {
@@ -120,6 +158,9 @@ func (p *Parser) Parse() (Node, error) {
 
 		let_id := Identifier{"let"}
 		if_id := Identifier{"if"}
+		vector_id := Identifier{"vector"}
+		string_id := Identifier{"string"}
+		begin_id := Identifier{"begin"}
 
 		// test if SExp is let binding
 		if len(children) > 0 && children[0] == let_id {
@@ -159,6 +200,18 @@ func (p *Parser) Parse() (Node, error) {
 				children[2],
 				children[3],
 			}, nil
+		}
+
+		if len(children) > 0 && children[0] == vector_id {
+			return Vector{children[1:]}, nil
+		}
+
+		if len(children) > 0 && children[0] == string_id {
+			return String{children[1:]}, nil
+		}
+
+		if len(children) > 0 && children[0] == begin_id {
+			return Begin{children[1:]}, nil
 		}
 
 		return SExp{children}, nil
