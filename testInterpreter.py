@@ -178,7 +178,7 @@ testSuites = {
         ),
     ],
     "Printing boxed heap values": [
-        ('"hola"', '"hola"'),
+        ('"hola\\n"', '"hola\n"'),
         ("(cons 1 2)", "(1 . 2)"),
         ("(cons 1 (cons 2 3))", "(1 . (2 . 3))"),
         ('(vector 1 "hola" 10)', '#(1 "hola" 10)'),
