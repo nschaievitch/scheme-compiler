@@ -121,6 +121,7 @@ func (p *Parser) Parse() (Node, error) {
 		let_id := Identifier{"let"}
 		if_id := Identifier{"if"}
 		vector_id := Identifier{"vector"}
+		string_id := Identifier{"string"}
 
 		// test if SExp is let binding
 		if len(children) > 0 && children[0] == let_id {
@@ -164,6 +165,10 @@ func (p *Parser) Parse() (Node, error) {
 
 		if len(children) > 0 && children[0] == vector_id {
 			return Vector{children[1:]}, nil
+		}
+
+		if len(children) > 0 && children[0] == string_id {
+			return String{children[1:]}, nil
 		}
 
 		return SExp{children}, nil

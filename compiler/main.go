@@ -41,6 +41,11 @@ const (
 	VECTOR
 	VECTOR_REF
 	VECTOR_SET
+	VECTOR_APPEND
+	STRING
+	STRING_REF
+	STRING_SET
+	STRING_APPEND
 )
 
 const FIXNUM_MASK = 0b11
@@ -202,6 +207,12 @@ func (i Identifier) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	case "vector-set!":
 		*stackIndex -= 1 // returns a new pointer to the vector?
 		return []Word{VECTOR_SET}, nil
+	case "vector-append":
+		*stackIndex -= 1
+		return []Word{VECTOR_APPEND}, nil
+	case "string-ref":
+		*stackIndex -= 1
+		return []Word{STRING_REF}, nil
 	default:
 		si, ok := (*env)[i]
 
@@ -317,6 +328,34 @@ func (v Vector) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	code = append(code, VECTOR, Word(len(v.Children)))
 
 	*stackIndex -= len(v.Children) - 1
+
+	return code, nil
+}
+
+type String struct {
+	Children []byte
+}
+
+func (s String) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	code := []Word{}
+
+	for i := len(s.Children) - 1; i >= 0; i-- {
+		if _, ok := s.Children[i].(Char); !ok {
+			return []Word, fmt.Errorf("Non character in string call: %v", s.Children[i])
+		}
+
+		words, err := s.Children[i].Compile(env, stackIndex)
+
+		if err != nil {
+			return []Word{}, err
+		}
+
+		code = append(code, words...)
+	}
+
+	code = append(code, STRING, Word(len(s.Children)))
+
+	*stackIndex -= len(s.Children) - 1
 
 	return code, nil
 }

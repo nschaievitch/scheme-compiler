@@ -143,7 +143,12 @@ testSuites = {
         ("(vector-ref (vector 1 2 3) 0)", 1),
         ("(vector-ref (vector 1 2 3) 3)", ERROR),
         ("(let (v (vector 1 2 3)) (vector-ref v 2))", 3),
-        ("(vector-ref (vector-set! (vector 1 2 3) 1 10) 1)", 10)
+        ("(vector-ref (vector-set! (vector 1 2 3) 1 10) 1)", 10),
+        ("(vector-set! (vector 1 2 3) 3 10)", ERROR),
+        ("(let (v1 (vector 1 2 3)) (v2 (vector 4 5 6)) (vector-ref v1 2))", 3),
+        ("(let (v1 (vector 1 2 3)) (v2 (vector 40 50 60)) (vector-ref v2 1))", 50),
+        ("(let (v1 (vector 1 2 3)) (v2 (vector 4 5 6)) (vector-ref (vector-append v1 v2) 4))", 5),
+        ("(let (v1 (vector 1 2 3)) (v2 (vector 4 5 6)) (vector-ref (vector-append v1 v2) 2))", 3)
     ]
 }
 
