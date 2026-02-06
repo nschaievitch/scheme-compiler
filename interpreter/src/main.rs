@@ -39,6 +39,8 @@ pub enum Op {
     VECTOR_APPEND,
     STRING,
     STRING_REF,
+    STRING_SET,
+    STRING_APPEND,
 }
 
 const HEAP_SIZE: usize = 2 << 10;
@@ -142,7 +144,7 @@ fn box_string(string_pointer: usize) -> u64 {
     (u << POINTER_SHIFT) | STRING_TAG
 }
 
-fn print_boxed(boxed: u64) -> Result<String> {
+fn print_boxed(boxed: u64, heap: &[u64]) -> Result<String> {
     if check_boxed_number(boxed) {
         return Ok(format!("{}", read_boxed_number(boxed)?));
     }
@@ -160,6 +162,59 @@ fn print_boxed(boxed: u64) -> Result<String> {
         }
     }
 
+    if check_boxed_pair_pointer(boxed) {
+        let p = read_boxed_pointer(boxed)?;
+        let s1 = print_boxed(heap[p], heap)?;
+        let s2 = print_boxed(heap[p + 1], heap)?;
+
+        return Ok(format!("({} . {})", s1, s2));
+    }
+
+    if check_boxed_vector_pointer(boxed) {
+        let p = read_boxed_pointer(boxed)?;
+
+        let len: usize = heap[p].try_into()?;
+
+        let mut s = String::new();
+        s.push_str("#(");
+
+        for i in 1..len {
+            s.push_str(&print_boxed(heap[p + i], heap)?);
+            s.push(' ');
+        }
+
+        s.push_str(&print_boxed(heap[p + len], heap)?);
+        s.push(')');
+
+        return Ok(s);
+    }
+
+    if check_boxed_string_pointer(boxed) {
+        let p = read_boxed_pointer(boxed)?;
+
+        let len: usize = heap[p].try_into()?;
+
+        let str_word_len = len / 8 + 1;
+
+        let mut s = String::new();
+
+        s.push('"');
+
+        for i in 1..=str_word_len {
+            let word = heap[p + i];
+            let bytes = word.to_le_bytes();
+            bytes.iter().for_each(|b| {
+                if *b != 0 {
+                    s.push(char::from(b.clone()));
+                }
+            })
+        }
+
+        s.push('"');
+
+        return Ok(s);
+    }
+
     Err(eyre!("Invalid tagged value {}", boxed))
 }
 
@@ -173,10 +228,10 @@ fn readword(code: &[u64], pc: &mut usize) -> Result<u64> {
     Ok(word)
 }
 
-fn interpret(code: Vec<u64>) -> Result<u64> {
+fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
     let mut pc: usize = 0;
     let mut stack: Vec<u64> = Vec::new();
-    let mut heap: Box<[u64; HEAP_SIZE]> = Box::new([0; HEAP_SIZE]);
+    // let mut heap: Box<[u64; HEAP_SIZE]> = Box::new([0; HEAP_SIZE]);
     let mut heap_pointer: usize = 0;
 
     loop {
@@ -223,7 +278,7 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                 if !check_boxed_number(val) {
                     return Err(eyre!(
                         "Called add1 on a value that is not a number: {}",
-                        print_boxed(val)?
+                        print_boxed(val, &heap[..])?
                     ));
                 }
 
@@ -239,7 +294,7 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                 if !check_boxed_number(val) {
                     return Err(eyre!(
                         "Called sub1 on a value that is not a number: {}",
-                        print_boxed(val)?
+                        print_boxed(val, &heap[..])?
                     ));
                 }
 
@@ -291,7 +346,7 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                 if !check_boxed_number(val) {
                     return Err(eyre!(
                         "Called zero? on a value that is not a number: {}",
-                        print_boxed(val)?
+                        print_boxed(val, &heap[..])?
                     ));
                 }
 
@@ -310,7 +365,7 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                 if !check_boxed_number(val) {
                     return Err(eyre!(
                         "Called integer->char on a value that is not a number: {}",
-                        print_boxed(val)?
+                        print_boxed(val, &heap[..])?
                     ));
                 }
 
@@ -327,7 +382,7 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                 if !check_boxed_character(val) {
                     return Err(eyre!(
                         "Called char->integer on a value that is not a character: {}",
-                        print_boxed(val)?
+                        print_boxed(val, &heap[..])?
                     ));
                 }
 
@@ -346,7 +401,7 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                 if !check_boxed_boolean(val) {
                     return Err(eyre!(
                         "Called not on a value that is not a boolean: {}",
-                        print_boxed(val)?
+                        print_boxed(val, &heap[..])?
                     ));
                 }
 
@@ -365,11 +420,17 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                     .ok_or(eyre!("Unexpected call to + with one argument"))?;
 
                 if !check_boxed_number(val1) {
-                    return Err(eyre!("Non number argument for + {}", print_boxed(val1)?));
+                    return Err(eyre!(
+                        "Non number argument for + {}",
+                        print_boxed(val1, &heap[..])?
+                    ));
                 }
 
                 if !check_boxed_number(val2) {
-                    return Err(eyre!("Non number argument for + {}", print_boxed(val2)?));
+                    return Err(eyre!(
+                        "Non number argument for + {}",
+                        print_boxed(val2, &heap[..])?
+                    ));
                 }
 
                 let num1 = read_boxed_number(val1)?;
@@ -388,11 +449,17 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                     .ok_or(eyre!("Unexpected call to - with one argument"))?;
 
                 if !check_boxed_number(val1) {
-                    return Err(eyre!("Non number argument for - {}", print_boxed(val1)?));
+                    return Err(eyre!(
+                        "Non number argument for - {}",
+                        print_boxed(val1, &heap[..])?
+                    ));
                 }
 
                 if !check_boxed_number(val2) {
-                    return Err(eyre!("Non number argument for - {}", print_boxed(val2)?));
+                    return Err(eyre!(
+                        "Non number argument for - {}",
+                        print_boxed(val2, &heap[..])?
+                    ));
                 }
 
                 let num1 = read_boxed_number(val1)?;
@@ -411,11 +478,17 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                     .ok_or(eyre!("Unexpected call to * with one argument"))?;
 
                 if !check_boxed_number(val1) {
-                    return Err(eyre!("Non number argument for * {}", print_boxed(val1)?));
+                    return Err(eyre!(
+                        "Non number argument for * {}",
+                        print_boxed(val1, &heap[..])?
+                    ));
                 }
 
                 if !check_boxed_number(val2) {
-                    return Err(eyre!("Non number argument for * {}", print_boxed(val2)?));
+                    return Err(eyre!(
+                        "Non number argument for * {}",
+                        print_boxed(val2, &heap[..])?
+                    ));
                 }
 
                 let num1 = read_boxed_number(val1)?;
@@ -434,11 +507,17 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                     .ok_or(eyre!("Unexpected call to < with one argument"))?;
 
                 if !check_boxed_number(val1) {
-                    return Err(eyre!("Non number argument for < {}", print_boxed(val1)?));
+                    return Err(eyre!(
+                        "Non number argument for < {}",
+                        print_boxed(val1, &heap[..])?
+                    ));
                 }
 
                 if !check_boxed_number(val2) {
-                    return Err(eyre!("Non number argument for < {}", print_boxed(val2)?));
+                    return Err(eyre!(
+                        "Non number argument for < {}",
+                        print_boxed(val2, &heap[..])?
+                    ));
                 }
 
                 let num1 = read_boxed_number(val1)?;
@@ -518,7 +597,10 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                     .ok_or(eyre!("Unexpected call to car without arguments"))?;
 
                 if !check_boxed_pair_pointer(val1) {
-                    return Err(eyre!("Non pair argument for car {}", print_boxed(val1)?));
+                    return Err(eyre!(
+                        "Non pair argument for car {}",
+                        print_boxed(val1, &heap[..])?
+                    ));
                 }
 
                 let pair_pointer = read_boxed_pointer(val1)?;
@@ -532,7 +614,10 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                     .ok_or(eyre!("Unexpected call to cdr without arguments"))?;
 
                 if !check_boxed_pair_pointer(val1) {
-                    return Err(eyre!("Non pair argument for cdr {}", print_boxed(val1)?));
+                    return Err(eyre!(
+                        "Non pair argument for cdr {}",
+                        print_boxed(val1, &heap[..])?
+                    ));
                 }
 
                 let pair_pointer = read_boxed_pointer(val1)?;
@@ -569,14 +654,14 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                 if !check_boxed_vector_pointer(vec_pointer) {
                     return Err(eyre!(
                         "Invalid vector pointer {}",
-                        print_boxed(vec_pointer)?
+                        print_boxed(vec_pointer, &heap[..])?
                     ));
                 }
 
                 if !check_boxed_number(vec_position_boxed) {
                     return Err(eyre!(
                         "Invalid vector position, is not a number {}",
-                        print_boxed(vec_position_boxed)?
+                        print_boxed(vec_position_boxed, &heap[..])?
                     ));
                 }
 
@@ -607,14 +692,14 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                 if !check_boxed_vector_pointer(vec_pointer) {
                     return Err(eyre!(
                         "Invalid vector pointer {}",
-                        print_boxed(vec_pointer)?
+                        print_boxed(vec_pointer, &heap[..])?
                     ));
                 }
 
                 if !check_boxed_number(vec_position_boxed) {
                     return Err(eyre!(
                         "Invalid vector position, is not a number {}",
-                        print_boxed(vec_position_boxed)?
+                        print_boxed(vec_position_boxed, &heap[..])?
                     ));
                 }
 
@@ -693,7 +778,7 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                     if !check_boxed_character(boxed_char) {
                         return Err(eyre!(
                             "Invalid non-char element in string call {}",
-                            print_boxed(boxed_char)?
+                            print_boxed(boxed_char, &heap[..])?
                         ));
                     }
 
@@ -713,7 +798,171 @@ fn interpret(code: Vec<u64>) -> Result<u64> {
                 heap_pointer += in_memory_size + 1;
             }
 
-            Op::STRING_REF => {}
+            Op::STRING_REF => {
+                let string_pointer = stack.pop().ok_or(eyre!("Invalid call to string_ref"))?;
+
+                let string_position_boxed =
+                    stack.pop().ok_or(eyre!("Invalid call to string_ref"))?;
+
+                if !check_boxed_string_pointer(string_pointer) {
+                    return Err(eyre!(
+                        "Invalid string pointer {}",
+                        print_boxed(string_pointer, &heap[..])?
+                    ));
+                }
+
+                if !check_boxed_number(string_position_boxed) {
+                    return Err(eyre!(
+                        "Invalid string position, is not a number {}",
+                        print_boxed(string_position_boxed, &heap[..])?
+                    ));
+                }
+
+                let pointer = read_boxed_pointer(string_pointer)?;
+                let string_len = heap[pointer];
+
+                let string_position = read_boxed_number(string_position_boxed)?;
+
+                if string_position >= string_len {
+                    return Err(eyre!(
+                        "Attempted to read out of string bounds: position {string_position} in string of length {string_len}"
+                    ));
+                }
+
+                let string_position_u: usize = string_position.try_into()?;
+                let pos_word: usize = string_position_u / 8;
+
+                let word = heap[pointer + pos_word + 1];
+
+                let word_bytes = word.to_le_bytes();
+
+                let char = word_bytes[string_position_u % 8];
+
+                stack.push(box_character(char));
+            }
+
+            Op::STRING_SET => {
+                let string_pointer = stack.pop().ok_or(eyre!("Invalid call to string_ref"))?;
+
+                let string_position_boxed =
+                    stack.pop().ok_or(eyre!("Invalid call to string_ref"))?;
+
+                let new_char_boxed = stack.pop().ok_or(eyre!("Invalid call to string_ref"))?;
+
+                if !check_boxed_string_pointer(string_pointer) {
+                    return Err(eyre!(
+                        "Invalid string pointer {}",
+                        print_boxed(string_pointer, &heap[..])?
+                    ));
+                }
+
+                if !check_boxed_number(string_position_boxed) {
+                    return Err(eyre!(
+                        "Invalid string position, is not a number {}",
+                        print_boxed(string_position_boxed, &heap[..])?
+                    ));
+                }
+
+                if !check_boxed_character(new_char_boxed) {
+                    return Err(eyre!(
+                        "Invalid string modification, is not a character {}",
+                        print_boxed(string_position_boxed, &heap[..])?
+                    ));
+                }
+
+                let pointer = read_boxed_pointer(string_pointer)?;
+                let string_len = heap[pointer];
+
+                let string_position = read_boxed_number(string_position_boxed)?;
+
+                let new_char = read_boxed_character(new_char_boxed)?;
+
+                if string_position >= string_len {
+                    return Err(eyre!(
+                        "Attempted to read out of string bounds: position {string_position} in string of length {string_len}"
+                    ));
+                }
+
+                let string_position_u: usize = string_position.try_into()?;
+                let pos_word: usize = string_position_u / 8;
+
+                let word = heap[pos_word + 1];
+
+                let mut word_bytes = word.to_le_bytes();
+
+                word_bytes[string_position_u % 8] = new_char;
+
+                heap[pos_word + 1] = u64::from_le_bytes(word_bytes);
+
+                stack.push(string_pointer);
+            }
+
+            Op::STRING_APPEND => {
+                let string_1_pointer_boxed =
+                    stack.pop().ok_or(eyre!("Invalid call to string_append"))?;
+                let string_2_pointer_boxed =
+                    stack.pop().ok_or(eyre!("Invalid call to string_append"))?;
+
+                if !check_boxed_string_pointer(string_1_pointer_boxed) {
+                    return Err(eyre!(
+                        "Invalid string pointer {}",
+                        print_boxed(string_1_pointer_boxed, &heap[..])?
+                    ));
+                }
+
+                if !check_boxed_string_pointer(string_2_pointer_boxed) {
+                    return Err(eyre!(
+                        "Invalid string pointer {}",
+                        print_boxed(string_2_pointer_boxed, &heap[..])?
+                    ));
+                }
+
+                let string_1 = read_boxed_pointer(string_1_pointer_boxed)?;
+                let string_2 = read_boxed_pointer(string_2_pointer_boxed)?;
+
+                let str_len_1: usize = heap[string_1].try_into()?;
+                let str_len_2: usize = heap[string_2].try_into()?;
+
+                let new_str_len = str_len_1 + str_len_2;
+
+                let mut str_bytes_1: Vec<u8> = Vec::new();
+                let mut str_bytes_2: Vec<u8> = Vec::new();
+
+                let str_1_word_len = str_len_1 / 8 + 1;
+                let str_2_word_len = str_len_2 / 8 + 1;
+
+                for i in 1..=str_1_word_len {
+                    let word = heap[string_1 + i].to_le_bytes();
+
+                    str_bytes_1.extend_from_slice(&word);
+                }
+
+                for i in 1..=str_2_word_len {
+                    let word = heap[string_2 + i].to_le_bytes();
+
+                    str_bytes_2.extend_from_slice(&word);
+                }
+
+                let mut str_bytes: Vec<u8> = Vec::new();
+
+                str_bytes.extend_from_slice(&str_bytes_1[..str_len_1]);
+                str_bytes.extend_from_slice(&str_bytes_2[..str_len_2]);
+
+                stack.push(box_string(heap_pointer));
+
+                heap[heap_pointer] = new_str_len.try_into()?;
+                heap_pointer += 1;
+
+                for (i, chunk) in str_bytes.chunks(8).enumerate() {
+                    let mut buf = [0u8; 8];
+                    buf[..chunk.len()].copy_from_slice(chunk);
+
+                    let w = u64::from_le_bytes(buf);
+                    heap[heap_pointer + i] = w;
+                }
+
+                heap_pointer += new_str_len / 8 + 1;
+            }
         }
     }
 }
@@ -734,12 +983,13 @@ fn read_stdin() -> Result<Vec<u64>> {
 }
 
 fn main() -> Result<()> {
+    let mut heap: Box<[u64; HEAP_SIZE]> = Box::new([0; HEAP_SIZE]);
     let code = read_stdin()?;
 
-    let ret = interpret(code)?;
+    let ret = interpret(code, &mut heap)?;
 
     // dbg!(ret);
-    let print_val = print_boxed(ret)?;
+    let print_val = print_boxed(ret, &heap[..])?;
 
     println!("{}", print_val);
 

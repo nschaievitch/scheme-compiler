@@ -213,6 +213,12 @@ func (i Identifier) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	case "string-ref":
 		*stackIndex -= 1
 		return []Word{STRING_REF}, nil
+	case "string-set!":
+		*stackIndex -= 1
+		return []Word{STRING_SET}, nil
+	case "string-append":
+		*stackIndex -= 1
+		return []Word{STRING_APPEND}, nil
 	default:
 		si, ok := (*env)[i]
 
@@ -333,7 +339,7 @@ func (v Vector) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 }
 
 type String struct {
-	Children []byte
+	Children []Node
 }
 
 func (s String) Compile(env *Environment, stackIndex *int) ([]Word, error) {
@@ -341,7 +347,7 @@ func (s String) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 
 	for i := len(s.Children) - 1; i >= 0; i-- {
 		if _, ok := s.Children[i].(Char); !ok {
-			return []Word, fmt.Errorf("Non character in string call: %v", s.Children[i])
+			return []Word{}, fmt.Errorf("Non character in string call: %v", s.Children)
 		}
 
 		words, err := s.Children[i].Compile(env, stackIndex)
@@ -356,6 +362,26 @@ func (s String) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	code = append(code, STRING, Word(len(s.Children)))
 
 	*stackIndex -= len(s.Children) - 1
+
+	return code, nil
+}
+
+type Begin struct {
+	Children []Node
+}
+
+func (b Begin) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	code := []Word{}
+
+	for _, c := range b.Children {
+		words, err := c.Compile(env, stackIndex)
+
+		if err != nil {
+			return []Word{}, err
+		}
+
+		code = append(code, words...)
+	}
 
 	return code, nil
 }

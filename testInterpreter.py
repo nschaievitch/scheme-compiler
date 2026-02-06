@@ -147,9 +147,53 @@ testSuites = {
         ("(vector-set! (vector 1 2 3) 3 10)", ERROR),
         ("(let (v1 (vector 1 2 3)) (v2 (vector 4 5 6)) (vector-ref v1 2))", 3),
         ("(let (v1 (vector 1 2 3)) (v2 (vector 40 50 60)) (vector-ref v2 1))", 50),
-        ("(let (v1 (vector 1 2 3)) (v2 (vector 4 5 6)) (vector-ref (vector-append v1 v2) 4))", 5),
-        ("(let (v1 (vector 1 2 3)) (v2 (vector 4 5 6)) (vector-ref (vector-append v1 v2) 2))", 3)
-    ]
+        (
+            "(let (v1 (vector 1 2 3)) (v2 (vector 4 5 6)) (vector-ref (vector-append v1 v2) 4))",
+            5,
+        ),
+        (
+            "(let (v1 (vector 1 2 3)) (v2 (vector 4 5 6)) (vector-ref (vector-append v1 v2) 2))",
+            3,
+        ),
+    ],
+    "String operations": [
+        ('(string-ref "hola" 2)', "#\\l"),
+        (
+            "(string-ref (string #\\h #\\o #\\l #\\a #\\m #\\u #\\n #\\d #\\o) 2)",
+            "#\\l",
+        ),
+        (
+            "(string-ref (string #\\h #\\o #\\l #\\a #\\m #\\u #\\n #\\d #\\o) 6)",
+            "#\\n",
+        ),
+        ('(string-ref "holamundo" 9)', ERROR),
+        ('(string-ref (string-set! "hola" 3 #\\i) 3)', "#\\i"),
+        (
+            "(string-ref (string-append (string #\\h #\\o #\\l #\\a) (string #\\m #\\u #\\n #\\d #\\o)) 6)",
+            "#\\n",
+        ),
+        (
+            '(string-ref (string-append "hola" (string #\\m #\\u #\\n #\\d #\\o)) 0)',
+            "#\\h",
+        ),
+    ],
+    "Printing boxed heap values": [
+        ('"hola"', '"hola"'),
+        ("(cons 1 2)", "(1 . 2)"),
+        ("(cons 1 (cons 2 3))", "(1 . (2 . 3))"),
+        ('(vector 1 "hola" 10)', '#(1 "hola" 10)'),
+    ],
+    "begin": [
+        ('(let (s "hola") (begin (string-set! s 3 #\\i) (string-ref s 3)))', "#\\i"),
+        (
+            '(let (s "hola") (v (vector 1 2 3)) (begin (string-set! s 3 #\\i) (vector-set! v 2 5) (string-ref s 3)))',
+            "#\\i",
+        ),
+        (
+            '(let (s "hola") (v (vector 1 2 3)) (begin (string-set! s 3 #\\i) (vector-set! v 2 5) (vector-ref v 2)))',
+            "5",
+        ),
+    ],
 }
 
 passed = 0
