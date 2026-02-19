@@ -46,6 +46,8 @@ const (
 	STRING_REF
 	STRING_SET
 	STRING_APPEND
+	SETUP_STACK_BASE
+	LABELCALL
 )
 
 const FIXNUM_MASK = 0b11
@@ -135,8 +137,12 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 		return []Word{}, fmt.Errorf("Found empty SExp")
 	}
 
-	switch s.Children[0].(type) {
-	case Identifier, SExp:
+	switch v := s.Children[0].(type) {
+	case Identifier:
+		if v.Name == "labelcall" {
+			ws = append(ws, SETUP_STACK_BASE)
+		}
+	case SExp:
 		break
 	default:
 		return []Word{}, fmt.Errorf("Invalid functor in S-Expression: %s", s.Children[0]) // TODO: improve message
@@ -219,6 +225,8 @@ func (i Identifier) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	case "string-append":
 		*stackIndex -= 1
 		return []Word{STRING_APPEND}, nil
+	case "labelcall":
+		return []Word{LABELCALL}, nil
 	default:
 		si, ok := (*env)[i]
 
@@ -386,6 +394,85 @@ func (b Begin) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	return code, nil
 }
 
+type Code struct {
+	Vars       []Identifier
+	Expression Node
+}
+
+func (c Code) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	// make local environment, assuming the variables are pushed into the stack in reverse order
+	localEnv := make(Environment, len(*env))
+
+	for k, v := range *env {
+		localEnv[k] = v
+	}
+
+	for i, v := range c.Vars {
+		localEnv[v] = len(c.Vars) - i + 1 // vars should be in %ebp + 1 + varNum, in reverse order, to allow for the return pointer and %ebp
+	}
+
+	localStackIndex := 0
+
+	code, err := c.Expression.Compile(&localEnv, &localStackIndex)
+
+	code = append(code, RETURN)
+
+	if err != nil {
+		return []Word{}, err
+	}
+
+	return code, nil
+}
+
+type Label struct {
+	Identifier Identifier
+	Code       Code
+}
+
+type Labels struct {
+	LabelList  []Label
+	Expression Node
+}
+
+// assumes it is top level expr
+// to compile each label with the lvars already in the environment in one pass, we store the codes like so:
+// the bytecode starts with a subarray of code positions:
+// [main pos ; f1 pos ; ...]
+// followed by the actual codes, whose length we don't know until compiling
+// When doing a label call, we jump to code[label] instead of label
+// This adds one level of indirection, but performance hit should be negligible
+func (l Labels) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	code := make([]Word, len(l.LabelList)+1) // we store the "main" first
+
+	for i, label := range l.LabelList {
+		(*env)[label.Identifier] = i + 1
+	}
+
+	for i, label := range l.LabelList {
+		code[i+1] = Word(len(code))
+
+		words, err := label.Code.Compile(env, stackIndex)
+
+		if err != nil {
+			return []Word{}, err
+		}
+
+		code = append(code, words...)
+	}
+
+	code[0] = Word(len(code))
+
+	words, err := l.Expression.Compile(env, stackIndex)
+
+	if err != nil {
+		return []Word{}, err
+	}
+
+	code = append(code, words...)
+
+	return code, nil
+}
+
 func (c *Compiler) Emit(w Word) {
 	c.Code = append(c.Code, w)
 }
@@ -396,6 +483,11 @@ func (c *Compiler) Compile(n Node, e *Environment) error {
 	// We keep positive stack indexes instead of negative (counting from the bottom of the stack)
 	// We also count in 64bit words, not bytes
 	stackIndex = 0
+
+	// if no toplevel labels, push 1 first for main
+	if _, ok := n.(Labels); !ok {
+		c.Code = append(c.Code, 1)
+	}
 
 	code, err := n.Compile(e, &stackIndex)
 

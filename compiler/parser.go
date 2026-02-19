@@ -161,8 +161,11 @@ func (p *Parser) Parse() (Node, error) {
 		vector_id := Identifier{"vector"}
 		string_id := Identifier{"string"}
 		begin_id := Identifier{"begin"}
+		labels_id := Identifier{"labels"}
+		code_id := Identifier{"code"}
 
-		// test if SExp is let binding
+		// test if SExp is another binding
+
 		if len(children) > 0 && children[0] == let_id {
 			if len(children) < 3 {
 				return nil, fmt.Errorf("Invalid let form, not enough arguments %s", p.Source[p.Pos:])
@@ -212,6 +215,72 @@ func (p *Parser) Parse() (Node, error) {
 
 		if len(children) > 0 && children[0] == begin_id {
 			return Begin{children[1:]}, nil
+		}
+
+		if len(children) > 0 && children[0] == code_id {
+			if len(children) != 3 {
+				return nil, fmt.Errorf("Invalid code form, wrong number of children")
+			}
+
+			varsExp, ok := children[1].(SExp)
+
+			if !ok {
+				return nil, fmt.Errorf("Invalid variables for code expression")
+			}
+
+			vars := make([]Identifier, 0)
+
+			for _, v := range varsExp.Children {
+				id, ok := v.(Identifier)
+
+				if !ok {
+					return nil, fmt.Errorf("Invalid variable %v for code expression", v)
+				}
+
+				vars = append(vars, id)
+			}
+
+			return Code{
+				Vars:       vars,
+				Expression: children[2],
+			}, nil
+		}
+
+		if len(children) > 0 && children[0] == labels_id {
+			if len(children) != 3 {
+				return nil, fmt.Errorf("Invalid number of arguments in labels form")
+			}
+
+			labels := make([]Label, 0)
+			lvars, ok := children[1].(SExp)
+
+			if !ok {
+				return nil, fmt.Errorf("Invalid lvars in labels form")
+			}
+
+			for _, c := range lvars.Children {
+				labNode, ok := c.(SExp)
+
+				if !ok {
+					return nil, fmt.Errorf("Invalid label in labels form")
+				}
+
+				lvar, ok := labNode.Children[0].(Identifier)
+
+				if !ok {
+					return nil, fmt.Errorf("Invalid identifier for label")
+				}
+
+				lcode, ok := labNode.Children[1].(Code)
+
+				if !ok {
+					return nil, fmt.Errorf("Invalid code for label")
+				}
+
+				labels = append(labels, Label{lvar, lcode})
+			}
+
+			return Labels{LabelList: labels, Expression: children[2]}, nil
 		}
 
 		return SExp{children}, nil

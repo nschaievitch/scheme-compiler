@@ -41,6 +41,8 @@ pub enum Op {
     STRING_REF,
     STRING_SET,
     STRING_APPEND,
+    SETUP_STACK_BASE,
+    LABELCALL,
 }
 
 const HEAP_SIZE: usize = 2 << 10;
@@ -233,6 +235,11 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
     let mut stack: Vec<u64> = Vec::new();
     // let mut heap: Box<[u64; HEAP_SIZE]> = Box::new([0; HEAP_SIZE]);
     let mut heap_pointer: usize = 0;
+    let mut stack_base_pointer: usize = 0;
+
+    // first word should point to main function
+    let main_pos: usize = readword(&code, &mut pc)?.try_into()?;
+    pc = main_pos;
 
     loop {
         let instr = read_op(readword(&code, &mut pc)?)?;
@@ -267,7 +274,19 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
             Op::RETURN => {
                 let val = stack.pop().ok_or(eyre!("No return value"));
-                return val;
+
+                if stack_base_pointer == 0 {
+                    return val;
+                }
+                
+                let new_pc: usize = stack[stack_base_pointer].try_into()?;
+                let new_bp : usize = stack[stack_base_pointer + 1].try_into()?;
+
+                pc = new_pc;
+                stack_base_pointer = new_bp;
+
+                stack.truncate(stack_base_pointer);
+                stack.push(val?);
             }
 
             Op::ADD1 => {
@@ -541,7 +560,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
             Op::LOAD_VAR => {
                 let stack_index: usize = readword(&code, &mut pc)?.try_into()?;
 
-                let val: u64 = *(stack.get(stack_index)
+                let val: u64 = *(stack.get(stack_index + stack_base_pointer)
                     .ok_or(eyre!("Invalid variable load from bad position, tried to grab position {} from stack of length {}", stack_index, stack.len()))?);
 
                 stack.push(val.clone())
@@ -962,6 +981,23 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 }
 
                 heap_pointer += new_str_len / 8 + 1;
+            }
+
+            Op::SETUP_STACK_BASE => {
+                stack.push(stack_base_pointer.try_into()?);
+
+                stack_base_pointer = stack.len() - 1;
+                stack.push(0);
+            }
+
+            Op::LABELCALL => {
+                dbg!(&stack, stack_base_pointer);
+                stack[stack_base_pointer] = pc.try_into()?;
+
+                dbg!(&stack, stack_base_pointer);
+                let jump_pos: usize = readword(&code, &mut pc)?.try_into()?;
+
+                pc = jump_pos;
             }
         }
     }

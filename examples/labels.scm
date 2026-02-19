@@ -1,0 +1,1 @@
+(labels ((f0 (code (x y) (- x y)))) (labelcall f0 25 15))
