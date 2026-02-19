@@ -148,6 +148,7 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 		return []Word{}, fmt.Errorf("Invalid functor in S-Expression: %s", s.Children[0]) // TODO: improve message
 	}
 
+	// error compiling labelcall, should not treat f0 as id
 	for i := len(s.Children) - 1; i >= 0; i-- {
 		childrenWords, err := s.Children[i].Compile(env, stackIndex)
 
