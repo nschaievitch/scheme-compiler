@@ -273,6 +273,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
             }
 
             Op::RETURN => {
+                dbg!("ret", &stack);
                 let val = stack.pop().ok_or(eyre!("No return value"));
 
                 if stack_base_pointer == 0 {
@@ -563,6 +564,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 let val: u64 = *(stack.get(stack_index + stack_base_pointer)
                     .ok_or(eyre!("Invalid variable load from bad position, tried to grab position {} from stack of length {}", stack_index, stack.len()))?);
 
+                dbg!("load", stack_index, val);
                 stack.push(val.clone())
             }
 
