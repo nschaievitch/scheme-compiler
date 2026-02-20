@@ -48,6 +48,7 @@ const (
 	STRING_APPEND
 	SETUP_STACK_BASE
 	LABELCALL
+	CLOSURE
 )
 
 const FIXNUM_MASK = 0b11
@@ -141,6 +142,28 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	case Identifier:
 		if v.Name == "labelcall" {
 			ws = append(ws, SETUP_STACK_BASE)
+
+			for i := len(s.Children) - 1; i >= 2; i-- {
+				childrenWords, err := s.Children[i].Compile(env, stackIndex)
+
+				if err != nil {
+					return []Word{}, err
+				}
+
+				ws = append(ws, childrenWords...)
+			}
+
+			ws = append(ws, LABELCALL)
+
+			labelIdent, ok := s.Children[1].(Identifier)
+
+			if !ok {
+				return []Word{}, fmt.Errorf("Invalid labelcall with non-identifier %v", s.Children[1])
+			}
+
+			ws = append(ws, Word((*env)[labelIdent]))
+
+			return ws, nil
 		}
 	case SExp:
 		break
@@ -148,7 +171,6 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 		return []Word{}, fmt.Errorf("Invalid functor in S-Expression: %s", s.Children[0]) // TODO: improve message
 	}
 
-	// error compiling labelcall, should not treat f0 as id
 	for i := len(s.Children) - 1; i >= 0; i-- {
 		childrenWords, err := s.Children[i].Compile(env, stackIndex)
 
@@ -397,6 +419,7 @@ func (b Begin) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 
 type Code struct {
 	Vars       []Identifier
+	FreeVars   []Identifier
 	Expression Node
 }
 
@@ -409,7 +432,7 @@ func (c Code) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	}
 
 	for i, v := range c.Vars {
-		localEnv[v] = len(c.Vars) - i + 1 // vars should be in %ebp + 1 + varNum, in reverse order, to allow for the return pointer and %ebp
+		localEnv[v] = len(c.Vars) - i - 1 // vars should be in %ebp + varNum, in reverse order
 	}
 
 	localStackIndex := 0
@@ -472,6 +495,38 @@ func (l Labels) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	code = append(code, words...)
 
 	return code, nil
+}
+
+type Closure struct {
+	LVar Identifier
+	Vars []Node
+}
+
+func (c Closure) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	label, ok := (*env)[c.LVar]
+
+	if !ok {
+		return []Word{}, fmt.Errorf("Unknown label %s in closure", c.LVar)
+	}
+
+	code := make([]Word, 0)
+
+	for i := len(c.Vars) - 1; i >= 0; i-- {
+		words, err := c.Vars[i].Compile(env, stackIndex)
+
+		if err != nil {
+			return []Word{}, err
+		}
+
+		code = append(code, words...)
+	}
+
+	code = append(code, CLOSURE, Word(label), Word(len(c.Vars)))
+
+	*stackIndex -= len(c.Vars) - 1
+
+	return code, nil
+
 }
 
 func (c *Compiler) Emit(w Word) {

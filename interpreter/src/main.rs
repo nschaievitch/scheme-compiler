@@ -1,11 +1,12 @@
 use std::{
     io::{self, Read},
-    u64, vec,
+    u64,
 };
 
 use eyre::{Result, eyre};
 use num_enum::TryFromPrimitive;
 
+#[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u64)]
 pub enum Op {
@@ -233,6 +234,7 @@ fn readword(code: &[u64], pc: &mut usize) -> Result<u64> {
 fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
     let mut pc: usize = 0;
     let mut stack: Vec<u64> = Vec::new();
+    let mut control_stack: Vec<usize> = Vec::new();
     // let mut heap: Box<[u64; HEAP_SIZE]> = Box::new([0; HEAP_SIZE]);
     let mut heap_pointer: usize = 0;
     let mut stack_base_pointer: usize = 0;
@@ -243,7 +245,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
     loop {
         let instr = read_op(readword(&code, &mut pc)?)?;
-        // dbg!(instr, pc);
+        // dbg!(&instr, &pc);
         match instr {
             Op::LOAD64 => {
                 let boxed_num = readword(&code, &mut pc)?;
@@ -273,20 +275,25 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
             }
 
             Op::RETURN => {
-                dbg!("ret", &stack);
                 let val = stack.pop().ok_or(eyre!("No return value"));
 
                 if stack_base_pointer == 0 {
                     return val;
                 }
-                
-                let new_pc: usize = stack[stack_base_pointer].try_into()?;
-                let new_bp : usize = stack[stack_base_pointer + 1].try_into()?;
+
+                let new_pc: usize = control_stack
+                    .pop()
+                    .ok_or(eyre!("Tried to pop pc from empty control stack"))?;
+
+                let new_bp: usize = control_stack
+                    .pop()
+                    .ok_or(eyre!("Tried to pop bp from empty control stack"))?;
+
+                stack.truncate(stack_base_pointer);
 
                 pc = new_pc;
                 stack_base_pointer = new_bp;
 
-                stack.truncate(stack_base_pointer);
                 stack.push(val?);
             }
 
@@ -562,9 +569,8 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 let stack_index: usize = readword(&code, &mut pc)?.try_into()?;
 
                 let val: u64 = *(stack.get(stack_index + stack_base_pointer)
-                    .ok_or(eyre!("Invalid variable load from bad position, tried to grab position {} from stack of length {}", stack_index, stack.len()))?);
+                    .ok_or(eyre!("Invalid variable load from bad position, tried to grab position {} from stack of length {}", stack_index + stack_base_pointer, stack.len()))?);
 
-                dbg!("load", stack_index, val);
                 stack.push(val.clone())
             }
 
@@ -791,7 +797,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
                 let mut bytes: Vec<u8> = Vec::with_capacity(string_len);
 
-                for i in 1..=string_len {
+                for _ in 1..=string_len {
                     let boxed_char = stack
                         .pop()
                         .ok_or(eyre!("Error popping from stack to create string"))?;
@@ -986,18 +992,19 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
             }
 
             Op::SETUP_STACK_BASE => {
-                stack.push(stack_base_pointer.try_into()?);
+                control_stack.push(stack_base_pointer);
 
-                stack_base_pointer = stack.len() - 1;
-                stack.push(0);
+                control_stack.push(stack.len());
             }
 
             Op::LABELCALL => {
-                dbg!(&stack, stack_base_pointer);
-                stack[stack_base_pointer] = pc.try_into()?;
+                stack_base_pointer = control_stack
+                    .pop()
+                    .ok_or(eyre!("Labelcall with empty control stack"))?;
+                control_stack.push(pc + 1);
 
-                dbg!(&stack, stack_base_pointer);
-                let jump_pos: usize = readword(&code, &mut pc)?.try_into()?;
+                let label_add: usize = readword(&code, &mut pc)?.try_into()?;
+                let jump_pos: usize = code[label_add].try_into()?;
 
                 pc = jump_pos;
             }

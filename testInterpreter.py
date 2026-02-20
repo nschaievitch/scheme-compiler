@@ -119,6 +119,7 @@ testSuites = {
         ("(let (a (+ 1 2)) (b 10) (- b a))", 7),
         ("(let (a (let (c 10) c)) (b 22) (- b a))", 12),
         ("(let (a 42) (let (b a) b))", 42),
+        ("(let (a 1) (let (a 2) a))", 2),
     ],
     "If expressions": [
         ("(if #t 1 2)", 1),
@@ -194,9 +195,7 @@ testSuites = {
             "5",
         ),
     ],
-    "labels": [
-        ('(labels ((f0 (code (x y) (- x y)))) (labelcall f0 25 15))', 10)
-    ]
+    "labels": [("(labels ((f0 (code (x y) (- x y)))) (labelcall f0 25 15))", 10)],
 }
 
 passed = 0

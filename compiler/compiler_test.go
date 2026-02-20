@@ -5,6 +5,29 @@ import (
 	"testing"
 )
 
+func tryCompile(t *testing.T, source string, expected []Word) {
+	c := Compiler{}
+
+	program, err := SchemeParse(source)
+
+	if err != nil {
+		t.Fatalf("Unexpected error while parsing string %s, got the following error %e", source, err)
+	}
+
+	env := make(Environment)
+
+	err = c.CompileFunction(program, &env)
+
+	if err != nil {
+		t.Fatalf("Unexpected error while compiling string %s: expected %v, got the following error %e", source, expected, err)
+	}
+
+	if !reflect.DeepEqual(expected, c.Code) {
+		t.Errorf("Unexpected compile output while compiling string %s. Expected %v, got %v instead", source, expected, c.Code)
+	}
+
+}
+
 func tryCompileNoLabel(t *testing.T, source string, expected []Word) {
 	c := Compiler{}
 
@@ -70,4 +93,8 @@ func TestCompileIf(t *testing.T) {
 	tryCompileNoLabel(t, "(if #t 1 2)", []Word{LOAD_BOOL, Word(0b10011111), POP_JUMP_IF_FALSE, 4, LOAD64, 1 << 2, JUMP_FORWARD, 2, LOAD64, 2 << 2, RETURN})
 	tryCompileNoLabel(t, "(if #t (+ 1 2) 2)", []Word{LOAD_BOOL, Word(0b10011111), POP_JUMP_IF_FALSE, 7, LOAD64, 2 << 2, LOAD64, 1 << 2, PLUS, JUMP_FORWARD, 2, LOAD64, 2 << 2, RETURN})
 	tryCompileNoLabel(t, "(if (= 10 10) (+ 1 2) 2)", []Word{LOAD64, 10 << 2, LOAD64, 10 << 2, EQUALP, POP_JUMP_IF_FALSE, 7, LOAD64, 2 << 2, LOAD64, 1 << 2, PLUS, JUMP_FORWARD, 2, LOAD64, 2 << 2, RETURN})
+}
+
+func TestCompileLabel(t *testing.T) {
+	tryCompile(t, "(labels ((f0 (code (x y) (- x y)))) (labelcall f0 25 15))", []Word{8, 2, LOAD_VAR, 2, LOAD_VAR, 3, MINUS, RETURN, SETUP_STACK_BASE, LOAD64, 15 << 2, LOAD64, 25 << 2, LABELCALL, 1, RETURN})
 }

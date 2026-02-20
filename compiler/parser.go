@@ -163,6 +163,7 @@ func (p *Parser) Parse() (Node, error) {
 		begin_id := Identifier{"begin"}
 		labels_id := Identifier{"labels"}
 		code_id := Identifier{"code"}
+		closure_id := Identifier{"closure"}
 
 		// test if SExp is another binding
 
@@ -281,6 +282,14 @@ func (p *Parser) Parse() (Node, error) {
 			}
 
 			return Labels{LabelList: labels, Expression: children[2]}, nil
+		}
+
+		if len(children) > 0 && children[0] == closure_id {
+			lvar, ok := children[1].(Identifier)
+
+			if !ok {
+
+			}
 		}
 
 		return SExp{children}, nil
