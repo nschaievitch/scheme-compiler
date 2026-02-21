@@ -84,9 +84,9 @@ func TestCompilesNestedExpression(t *testing.T) {
 }
 
 func TestCompileLet(t *testing.T) {
-	tryCompileNoLabel(t, "(let (a 1) a)", []Word{LOAD64, 1 << 2, LOAD_VAR, 0, RETURN})
-	tryCompileNoLabel(t, "(let (a 1) (b 2) (+ a b))", []Word{LOAD64, 1 << 2, LOAD64, 2 << 2, LOAD_VAR, 1, LOAD_VAR, 0, PLUS, RETURN})
-	tryCompileNoLabel(t, "(let (a (+ 1 2)) (b 10) (- b a))", []Word{LOAD64, 2 << 2, LOAD64, 1 << 2, PLUS, LOAD64, 10 << 2, LOAD_VAR, 0, LOAD_VAR, 1, MINUS, RETURN})
+	tryCompileNoLabel(t, "(let ((a 1)) a)", []Word{LOAD64, 1 << 2, LOAD_VAR, 0, RETURN})
+	tryCompileNoLabel(t, "(let ((a 1) (b 2)) (+ a b))", []Word{LOAD64, 1 << 2, LOAD64, 2 << 2, LOAD_VAR, 1, LOAD_VAR, 0, PLUS, RETURN})
+	tryCompileNoLabel(t, "(let ((a (+ 1 2)) (b 10)) (- b a))", []Word{LOAD64, 2 << 2, LOAD64, 1 << 2, PLUS, LOAD64, 10 << 2, LOAD_VAR, 0, LOAD_VAR, 1, MINUS, RETURN})
 }
 
 func TestCompileIf(t *testing.T) {
@@ -96,5 +96,5 @@ func TestCompileIf(t *testing.T) {
 }
 
 func TestCompileLabel(t *testing.T) {
-	tryCompile(t, "(labels ((f0 (code (x y) (- x y)))) (labelcall f0 25 15))", []Word{8, 2, LOAD_VAR, 2, LOAD_VAR, 3, MINUS, RETURN, SETUP_STACK_BASE, LOAD64, 15 << 2, LOAD64, 25 << 2, LABELCALL, 1, RETURN})
+	tryCompile(t, "(labels ((f0 (code (x y) (- x y)))) (labelcall f0 25 15))", []Word{8, 2, LOAD_VAR, 0, LOAD_VAR, 1, MINUS, RETURN, SETUP_STACK_BASE, LOAD64, 15 << 2, LOAD64, 25 << 2, LABELCALL, 1, RETURN})
 }

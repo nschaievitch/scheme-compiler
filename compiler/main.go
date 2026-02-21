@@ -50,6 +50,7 @@ const (
 	LABELCALL
 	CLOSURE
 	FUNCALL
+	LOAD_CLOSURE_VAR
 )
 
 const FIXNUM_MASK = 0b11
@@ -64,7 +65,11 @@ const BOOLEAN_MASK = 0b1111111
 const BOOLEAN_TAG = 0b0011111
 const BOOLEAN_SHIFT = 7
 
-type Environment map[Identifier]int
+type VariableResolution struct {
+	Offset       int
+	IsClosureVar bool
+}
+type Environment map[Identifier]VariableResolution
 
 type Node interface {
 	Compile(env *Environment, stackIndex *int) ([]Word, error)
@@ -162,9 +167,28 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 				return []Word{}, fmt.Errorf("Invalid labelcall with non-identifier %v", s.Children[1])
 			}
 
-			ws = append(ws, Word((*env)[labelIdent]))
+			ws = append(ws, Word((*env)[labelIdent].Offset))
 
+			*stackIndex -= len(s.Children) - 2
 			return ws, nil
+		} else if v.Name == "funcall" { // ugly repeated code... should improve...
+			ws = append(ws, SETUP_STACK_BASE)
+
+			for i := len(s.Children) - 1; i >= 1; i-- {
+				childrenWords, err := s.Children[i].Compile(env, stackIndex)
+
+				if err != nil {
+					return []Word{}, err
+				}
+
+				ws = append(ws, childrenWords...)
+			}
+
+			ws = append(ws, FUNCALL)
+
+			*stackIndex -= len(s.Children) - 2
+			return ws, nil
+
 		}
 	case SExp:
 		break
@@ -249,17 +273,21 @@ func (i Identifier) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	case "string-append":
 		*stackIndex -= 1
 		return []Word{STRING_APPEND}, nil
-	case "labelcall":
-		return []Word{LABELCALL}, nil
 	default:
-		si, ok := (*env)[i]
+		varRes, ok := (*env)[i]
 
 		if !ok {
 			return []Word{}, fmt.Errorf("Unknown identifier %s", i.Name)
 		}
 
 		*stackIndex += 1
-		return []Word{LOAD_VAR, Word(si)}, nil
+
+		if varRes.IsClosureVar {
+			return []Word{LOAD_CLOSURE_VAR, Word(varRes.Offset)}, nil
+
+		} else {
+			return []Word{LOAD_VAR, Word(varRes.Offset)}, nil
+		}
 	}
 }
 
@@ -285,7 +313,7 @@ func (l Let) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 
 		code = append(code, val...)
 
-		(*env)[b.Identifier] = *stackIndex - 1
+		(*env)[b.Identifier] = VariableResolution{*stackIndex - 1, false}
 	}
 
 	body, err := l.Body.Compile(env, stackIndex)
@@ -433,10 +461,14 @@ func (c Code) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	}
 
 	for i, v := range c.Vars {
-		localEnv[v] = len(c.Vars) - i - 1 // vars should be in %ebp + varNum, in reverse order
+		localEnv[v] = VariableResolution{len(c.Vars) - i - 1, false} // vars should be in %ebp + varNum, in reverse order
 	}
 
-	localStackIndex := 0
+	for i, v := range c.FreeVars {
+		localEnv[v] = VariableResolution{i, true} // free vars are taken from the closure
+	}
+
+	localStackIndex := len(c.Vars)
 
 	code, err := c.Expression.Compile(&localEnv, &localStackIndex)
 
@@ -470,7 +502,7 @@ func (l Labels) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	code := make([]Word, len(l.LabelList)+1) // we store the "main" first
 
 	for i, label := range l.LabelList {
-		(*env)[label.Identifier] = i + 1
+		(*env)[label.Identifier] = VariableResolution{i + 1, false}
 	}
 
 	for i, label := range l.LabelList {
@@ -522,12 +554,18 @@ func (c Closure) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 		code = append(code, words...)
 	}
 
-	code = append(code, CLOSURE, Word(label), Word(len(c.Values)))
+	code = append(code, CLOSURE, Word(label.Offset), Word(len(c.Values)))
 
 	*stackIndex -= len(c.Values) - 1
 
 	return code, nil
 
+}
+
+type Lambda struct {
+	Args     []Identifier
+	FreeVars []Identifier
+	Code     Node
 }
 
 func (c *Compiler) Emit(w Word) {

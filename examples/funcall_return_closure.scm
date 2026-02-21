@@ -1,0 +1,7 @@
+(labels ((f_adder (code (y) (x)
+            (+ x y)))
+   (f_make (code (x) ()
+            (closure f_adder x))))
+  (let (make-adder (closure f_make))
+    (let (add7 (funcall make-adder 7))
+      (funcall add7 10))))

@@ -168,13 +168,19 @@ func (p *Parser) Parse() (Node, error) {
 		// test if SExp is another binding
 
 		if len(children) > 0 && children[0] == let_id {
-			if len(children) < 3 {
-				return nil, fmt.Errorf("Invalid let form, not enough arguments %s", p.Source[p.Pos:])
+			if len(children) != 3 {
+				return nil, fmt.Errorf("Invalid let form, must have three children %s", p.Source[p.Pos:])
 			}
 
 			bindings := []Binding{}
 
-			for _, b := range children[1 : len(children)-1] {
+			bindingSexp, ok := children[1].(SExp)
+
+			if !ok {
+				return nil, fmt.Errorf("Invalid let form, second cell must be bindings")
+			}
+
+			for _, b := range bindingSexp.Children {
 				switch b.(type) {
 				case SExp:
 					bs := b.(SExp)
@@ -219,32 +225,57 @@ func (p *Parser) Parse() (Node, error) {
 		}
 
 		if len(children) > 0 && children[0] == code_id {
-			if len(children) != 3 {
-				return nil, fmt.Errorf("Invalid code form, wrong number of children")
-			}
+			if len(children) == 3 || len(children) == 4 {
 
-			varsExp, ok := children[1].(SExp)
-
-			if !ok {
-				return nil, fmt.Errorf("Invalid variables for code expression")
-			}
-
-			vars := make([]Identifier, 0)
-
-			for _, v := range varsExp.Children {
-				id, ok := v.(Identifier)
+				varsExp, ok := children[1].(SExp)
 
 				if !ok {
-					return nil, fmt.Errorf("Invalid variable %v for code expression", v)
+					return nil, fmt.Errorf("Invalid variables for code expression")
 				}
 
-				vars = append(vars, id)
-			}
+				vars := make([]Identifier, 0)
 
-			return Code{
-				Vars:       vars,
-				Expression: children[2],
-			}, nil
+				for _, v := range varsExp.Children {
+					id, ok := v.(Identifier)
+
+					if !ok {
+						return nil, fmt.Errorf("Invalid variable %v for code expression", v)
+					}
+
+					vars = append(vars, id)
+				}
+
+				if len(children) == 4 {
+					freeVars := make([]Identifier, 0)
+					freeVarsExp, ok := children[2].(SExp)
+
+					if !ok {
+						return nil, fmt.Errorf("Invalid free variables for code expression")
+					}
+
+					for _, v := range freeVarsExp.Children {
+						id, ok := v.(Identifier)
+
+						if !ok {
+							return nil, fmt.Errorf("Invalid free variable %v for code expression", v)
+						}
+
+						freeVars = append(freeVars, id)
+					}
+					return Code{
+						Vars:       vars,
+						FreeVars:   freeVars,
+						Expression: children[3],
+					}, nil
+
+				}
+
+				return Code{
+					Vars:       vars,
+					Expression: children[2],
+				}, nil
+			}
+			return nil, fmt.Errorf("Invalid code form, wrong number of children")
 		}
 
 		if len(children) > 0 && children[0] == labels_id {

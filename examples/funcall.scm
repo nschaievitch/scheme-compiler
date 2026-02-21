@@ -1,0 +1,1 @@
+(labels ((f0 (code (x) (y) (- x y)))) (funcall (closure f0 4) 10))
