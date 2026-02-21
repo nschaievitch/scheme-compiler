@@ -49,6 +49,7 @@ const (
 	SETUP_STACK_BASE
 	LABELCALL
 	CLOSURE
+	FUNCALL
 )
 
 const FIXNUM_MASK = 0b11
@@ -498,8 +499,8 @@ func (l Labels) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 }
 
 type Closure struct {
-	LVar Identifier
-	Vars []Node
+	LVar   Identifier
+	Values []Node
 }
 
 func (c Closure) Compile(env *Environment, stackIndex *int) ([]Word, error) {
@@ -511,8 +512,8 @@ func (c Closure) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 
 	code := make([]Word, 0)
 
-	for i := len(c.Vars) - 1; i >= 0; i-- {
-		words, err := c.Vars[i].Compile(env, stackIndex)
+	for i := len(c.Values) - 1; i >= 0; i-- {
+		words, err := c.Values[i].Compile(env, stackIndex)
 
 		if err != nil {
 			return []Word{}, err
@@ -521,9 +522,9 @@ func (c Closure) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 		code = append(code, words...)
 	}
 
-	code = append(code, CLOSURE, Word(label), Word(len(c.Vars)))
+	code = append(code, CLOSURE, Word(label), Word(len(c.Values)))
 
-	*stackIndex -= len(c.Vars) - 1
+	*stackIndex -= len(c.Values) - 1
 
 	return code, nil
 

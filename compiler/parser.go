@@ -284,12 +284,15 @@ func (p *Parser) Parse() (Node, error) {
 			return Labels{LabelList: labels, Expression: children[2]}, nil
 		}
 
+		// (closure f x y z...)
 		if len(children) > 0 && children[0] == closure_id {
 			lvar, ok := children[1].(Identifier)
 
 			if !ok {
-
+				return nil, fmt.Errorf("Invalid lvar for closure")
 			}
+
+			return Closure{LVar: lvar, Values: children[2:]}, nil
 		}
 
 		return SExp{children}, nil

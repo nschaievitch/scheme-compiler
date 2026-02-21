@@ -44,6 +44,8 @@ pub enum Op {
     STRING_APPEND,
     SETUP_STACK_BASE,
     LABELCALL,
+    CLOSURE,
+    FUNCALL,
 }
 
 const HEAP_SIZE: usize = 2 << 10;
@@ -1008,6 +1010,8 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
                 pc = jump_pos;
             }
+
+            Op::CLOSURE => {}
         }
     }
 }
