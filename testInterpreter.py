@@ -120,6 +120,7 @@ testSuites = {
         ("(let ((a (let ((c 10)) c)) (b 22)) (- b a))", 12),
         ("(let ((a 42)) (let ((b a)) b))", 42),
         ("(let ((a 1)) (let ((a 2)) a))", 2),
+        ("(cons (let ((a 10)) (+ a a)) 30)", "(20 . 30)")
     ],
     "If expressions": [
         ("(if #t 1 2)", 1),
@@ -208,7 +209,19 @@ testSuites = {
             ("(labels ((f_addx (code (y) (x) (+ x y)))) (let ((x 5)) (let ((add5 (closure f_addx x))) (funcall add5 37))))", 42),
             ("(labels ((f_adder (code (y) (x) (+ x y))) (f_make (code (x) () (closure f_adder x)))) (let ((make-adder (closure f_make))) (let ((add7 (funcall make-adder 7))) (funcall add7 10))))", 17),
             ("(labels ((f_inc (code (n) () (+ n 1))) (f_twice (code (f x) () (let ((t (funcall f x))) (funcall f t))))) (let ((inc (closure f_inc)) (twice (closure f_twice))) (funcall twice inc 10)))", 12)
-         ]
+         ],
+    "lambdas":
+        [
+           ("((lambda (x) (+ x x)) 21)", 42),
+           ("(let ((adder (lambda (x) (lambda (y) (+ x y))))) ((adder 10) 20))", 30),
+           ("(let ((b 2)) (let ((a (lambda (y) (+ y b)))) (+ (a 1) (a 1))))", 6),
+           ("(let ((f (lambda (y) (cons 10 y)))) (cdr (f 20)))", 20),
+           ("(let ((first (lambda (p) (car p))) (app (lambda (f) (f 10)))) (app (first (cons (lambda (x) (+ x 100)) (lambda (x) (+ x x))))))", 110),
+           ("(let ((b 2)) (let ((a (lambda (y) (cons (let ((z 30)) (lambda () (+ y z))) (lambda (c) (- c b)))))) (let ((x (cdr (a 20)))) (x 3))))", 1),
+           ("(let ((b 2)) (let ((a (lambda (y) (cons (let ((z 11)) (lambda () (+ y z))) (lambda (a) (- a b)))))) ((car (a 50)))))", 61),
+           ("(let ((b 2)) (let ((a (lambda (y) (cons (let ((z 11)) (lambda () (+ y z))) (lambda (a) (- a b)))))) ((cdr (a 50)) 10)))", 8),
+
+        ]
 }
 
 passed = 0

@@ -164,6 +164,7 @@ func (p *Parser) Parse() (Node, error) {
 		labels_id := Identifier{"labels"}
 		code_id := Identifier{"code"}
 		closure_id := Identifier{"closure"}
+		lambda_id := Identifier{"lambda"}
 
 		// test if SExp is another binding
 
@@ -324,6 +325,36 @@ func (p *Parser) Parse() (Node, error) {
 			}
 
 			return Closure{LVar: lvar, Values: children[2:]}, nil
+		}
+
+		if len(children) > 0 && children[0] == lambda_id {
+			if len(children) != 3 {
+				return nil, fmt.Errorf("Invalid lambda form, should have 3 children")
+			}
+
+			varsExp, ok := children[1].(SExp)
+
+			if !ok {
+				return nil, fmt.Errorf("Invalid variables for code expression")
+			}
+
+			vars := make([]Identifier, 0)
+
+			for _, v := range varsExp.Children {
+				id, ok := v.(Identifier)
+
+				if !ok {
+					return nil, fmt.Errorf("Invalid variable %v for lambda expression", v)
+				}
+
+				vars = append(vars, id)
+			}
+
+			return Lambda{
+				Args: vars,
+				Code: children[2],
+			}, nil
+
 		}
 
 		return SExp{children}, nil

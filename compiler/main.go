@@ -51,6 +51,7 @@ const (
 	CLOSURE
 	FUNCALL
 	LOAD_CLOSURE_VAR
+	SLIDE
 )
 
 const FIXNUM_MASK = 0b11
@@ -189,9 +190,43 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 			*stackIndex -= len(s.Children) - 2
 			return ws, nil
 
+		} else if _, ok := BUILTINS[v.Name]; !ok { // if it is a variable, do implicit funcall
+			ws = append(ws, SETUP_STACK_BASE)
+
+			for i := len(s.Children) - 1; i >= 0; i-- {
+				childrenWords, err := s.Children[i].Compile(env, stackIndex)
+
+				if err != nil {
+					return []Word{}, err
+				}
+
+				ws = append(ws, childrenWords...)
+			}
+
+			ws = append(ws, FUNCALL)
+
+			*stackIndex -= len(s.Children) - 1
+			return ws, nil
+
 		}
-	case SExp:
-		break
+	case SExp, Closure:
+		// if the first element is a SExp or closure, we do an implicit funcall
+		ws = append(ws, SETUP_STACK_BASE)
+
+		for i := len(s.Children) - 1; i >= 0; i-- {
+			childrenWords, err := s.Children[i].Compile(env, stackIndex)
+
+			if err != nil {
+				return []Word{}, err
+			}
+
+			ws = append(ws, childrenWords...)
+		}
+
+		ws = append(ws, FUNCALL)
+
+		*stackIndex -= len(s.Children) - 1
+		return ws, nil
 	default:
 		return []Word{}, fmt.Errorf("Invalid functor in S-Expression: %s", s.Children[0]) // TODO: improve message
 	}
@@ -323,6 +358,8 @@ func (l Let) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	}
 
 	code = append(code, body...)
+	code = append(code, SLIDE, Word(len(l.Bindings)))
+	*stackIndex -= len(l.Bindings)
 
 	return code, nil
 }
@@ -452,13 +489,21 @@ type Code struct {
 	Expression Node
 }
 
+func CopyMap[K comparable, V any](src map[K]V) map[K]V {
+	if src == nil {
+		return nil
+	}
+	dst := make(map[K]V, len(src))
+	for k, v := range src {
+		dst[k] = v
+	}
+	return dst
+}
+
 func (c Code) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	// make local environment, assuming the variables are pushed into the stack in reverse order
-	localEnv := make(Environment, len(*env))
-
-	for k, v := range *env {
-		localEnv[k] = v
-	}
+	var localEnv Environment
+	localEnv = CopyMap(*env)
 
 	for i, v := range c.Vars {
 		localEnv[v] = VariableResolution{len(c.Vars) - i - 1, false} // vars should be in %ebp + varNum, in reverse order
@@ -563,9 +608,219 @@ func (c Closure) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 }
 
 type Lambda struct {
-	Args     []Identifier
-	FreeVars []Identifier
-	Code     Node
+	Args []Identifier
+	Code Node
+}
+
+func (l Lambda) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	panic("Attempted to compile lambda without lifting")
+}
+
+var BUILTINS = map[string]bool{
+	"add1":          true,
+	"sub1":          true,
+	"integer->char": true,
+	"char->integer": true,
+	"null?":         true,
+	"zero?":         true,
+	"not":           true,
+	"integer?":      true,
+	"boolean?":      true,
+	"+":             true,
+	"*":             true,
+	"-":             true,
+	"<":             true,
+	"=":             true,
+	"cons":          true,
+	"car":           true,
+	"cdr":           true,
+	"vector-ref":    true,
+	"vector-set!":   true,
+	"vector-append": true,
+	"string-ref":    true,
+	"string-set!":   true,
+	"string-append": true,
+}
+
+func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transformed Node, free map[Identifier]bool) {
+	boundLocal := CopyMap(bound)
+	free = make(map[Identifier]bool)
+
+	switch v := n.(type) {
+	case Let:
+		binds := make([]Binding, 0)
+
+		for _, b := range v.Bindings {
+			tr, fr := LiftLambdasRec(b.Value, boundLocal, labels)
+
+			for k := range fr {
+				if _, ok := boundLocal[k]; !ok {
+					free[k] = true
+				}
+			}
+
+			binds = append(binds, Binding{b.Identifier, tr})
+			boundLocal[b.Identifier] = true
+		}
+
+		tr, fr := LiftLambdasRec(v.Body, boundLocal, labels)
+
+		for k := range fr {
+			if _, ok := boundLocal[k]; !ok {
+				free[k] = true
+			}
+		}
+
+		return Let{
+			Bindings: binds,
+			Body:     tr,
+		}, free
+	case Lambda:
+		boundLocal = make(map[Identifier]bool)
+		for _, arg := range v.Args {
+			boundLocal[arg] = true
+		}
+
+		tr, fr := LiftLambdasRec(v.Code, boundLocal, labels)
+
+		freeVars := make([]Identifier, 0)
+
+		for k := range fr {
+			if _, ok := boundLocal[k]; !ok {
+				free[k] = true
+				freeVars = append(freeVars, k)
+			}
+		}
+
+		labName := Identifier{fmt.Sprintf("__f%d", len(*labels))}
+		lab := Label{
+			Identifier: labName,
+			Code: Code{
+				Vars:       v.Args,
+				FreeVars:   freeVars,
+				Expression: tr,
+			},
+		}
+
+		*labels = append(*labels, lab)
+
+		// sadly can't simply upcast apparently
+		freeVarNodes := make([]Node, 0)
+
+		for _, vr := range freeVars {
+			freeVarNodes = append(freeVarNodes, vr)
+		}
+
+		return Closure{
+			LVar:   labName,
+			Values: freeVarNodes,
+		}, free
+
+	case Identifier:
+		_, ok := bound[v]
+
+		if !ok {
+			_, ok = BUILTINS[v.Name]
+
+			if !ok {
+				free[v] = true
+			}
+		}
+
+		return n, free
+	case SExp:
+		children := make([]Node, 0)
+
+		for _, c := range v.Children {
+			tr, fr := LiftLambdasRec(c, boundLocal, labels)
+
+			for k := range fr {
+				free[k] = true
+			}
+
+			children = append(children, tr)
+		}
+
+		return SExp{children}, free
+	case Vector:
+		children := make([]Node, 0)
+
+		for _, c := range v.Children {
+			tr, fr := LiftLambdasRec(c, boundLocal, labels)
+
+			for k := range fr {
+				free[k] = true
+			}
+
+			children = append(children, tr)
+		}
+
+		return Vector{children}, free
+	case Closure:
+		values := make([]Node, 0)
+		for _, c := range v.Values {
+			tr, fr := LiftLambdasRec(c, boundLocal, labels)
+
+			for k := range fr {
+				free[k] = true
+			}
+
+			values = append(values, tr)
+		}
+		return Closure{v.LVar, values}, free
+	case Begin:
+		children := make([]Node, 0)
+		for _, c := range v.Children {
+			tr, fr := LiftLambdasRec(c, boundLocal, labels)
+
+			for k := range fr {
+				free[k] = true
+			}
+
+			children = append(children, tr)
+		}
+		return Begin{children}, free
+	case If:
+		tr_condition, fr := LiftLambdasRec(v.Condition, bound, labels)
+
+		for k := range fr {
+			free[k] = true
+		}
+
+		tr_consequent, fr := LiftLambdasRec(v.Consequent, bound, labels)
+
+		for k := range fr {
+			free[k] = true
+		}
+
+		tr_alternative, fr := LiftLambdasRec(v.Alternative, bound, labels)
+
+		for k := range fr {
+			free[k] = true
+		}
+
+		return If{Condition: tr_condition, Consequent: tr_consequent, Alternative: tr_alternative}, free
+	default:
+		return n, free
+	}
+}
+
+func LiftLambdas(program Node) (Node, error) {
+	// The compiler does not support labels being used with lambdas, UB if both are used
+	if _, ok := program.(Labels); ok {
+		return program, nil
+	}
+
+	bound := make(map[Identifier]bool)
+	labels := make([]Label, 0)
+
+	tr, free := LiftLambdasRec(program, bound, &labels)
+
+	if len(free) > 0 {
+		return nil, fmt.Errorf("Found free variable(s) in top level program: %v", free)
+	}
+
+	return Labels{LabelList: labels, Expression: tr}, nil
 }
 
 func (c *Compiler) Emit(w Word) {
@@ -597,7 +852,6 @@ func (c *Compiler) Compile(n Node, e *Environment) error {
 
 func (c *Compiler) CompileFunction(n Node, e *Environment) error {
 	err := c.Compile(n, e)
-
 	if err != nil {
 		return err
 	}
@@ -630,11 +884,16 @@ func main() {
 
 	check(err)
 
+	liftedProgram, err := LiftLambdas(program)
+	// panic(fmt.Errorf("%+v", liftedProgram))
+
+	check(err)
+
 	c := Compiler{}
 
 	env := make(Environment)
 
-	err = c.CompileFunction(program, &env)
+	err = c.CompileFunction(liftedProgram, &env)
 
 	check(err)
 
