@@ -47,6 +47,7 @@ pub enum Op {
     CLOSURE,
     FUNCALL,
     LOAD_CLOSURE_VAR,
+    SLIDE,
 }
 
 const HEAP_SIZE: usize = 2 << 10;
@@ -597,6 +598,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
             Op::LOAD_VAR => {
                 let stack_index: usize = readword(&code, &mut pc)?.try_into()?;
+                dbg!(&stack, &stack_index);
 
                 let val: u64 = *(stack.get(stack_index + stack_base_pointer)
                     .ok_or(eyre!("Invalid variable load from bad position, tried to grab position {} from stack of length {}", stack_index + stack_base_pointer, stack.len()))?);
@@ -632,6 +634,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
             }
 
             Op::CONS => {
+                dbg!(&stack);
                 let val1 = stack
                     .pop()
                     .ok_or(eyre!("Unexpected call to cons without arguments"))?;
@@ -1073,10 +1076,8 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                     .ok_or(eyre!("Tried to funcall with no closure on stack"))?;
 
                 if !check_boxed_closure_pointer(boxed_closure_pointer) {
-                    return Err(eyre!(
-                        "Invalid closure pointer {}",
-                        print_boxed(boxed_closure_pointer, &heap[..])?
-                    ));
+                    dbg!(&stack);
+                    return Err(eyre!("Invalid closure pointer {}", boxed_closure_pointer));
                 }
 
                 control_stack.push(boxed_closure_pointer.try_into()?);
@@ -1106,6 +1107,16 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 let val = heap[closure_pointer + var_index + 1];
 
                 stack.push(val.clone())
+            }
+
+            Op::SLIDE => {
+                let n: usize = readword(&code, &mut pc)?.try_into()?;
+                let val = stack
+                    .pop()
+                    .ok_or(eyre!("Tried to slide from empty stack"))?;
+
+                stack.truncate(stack.len() - n);
+                stack.push(val);
             }
         }
     }
