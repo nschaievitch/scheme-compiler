@@ -49,7 +49,7 @@ func tryCompileNoLabel(t *testing.T, source string, expected []Word) {
 	expected_n = append(expected_n, expected...)
 
 	if !reflect.DeepEqual(expected_n, c.Code) {
-		t.Errorf("Unexpected compile output while compiling string %s. Expected %v, got %v instead", source, expected, c.Code)
+		t.Errorf("Unexpected compile output while compiling string %s. Expected %v, got %v instead", source, expected_n, c.Code)
 	}
 }
 
@@ -84,9 +84,9 @@ func TestCompilesNestedExpression(t *testing.T) {
 }
 
 func TestCompileLet(t *testing.T) {
-	tryCompileNoLabel(t, "(let ((a 1)) a)", []Word{LOAD64, 1 << 2, LOAD_VAR, 0, RETURN})
-	tryCompileNoLabel(t, "(let ((a 1) (b 2)) (+ a b))", []Word{LOAD64, 1 << 2, LOAD64, 2 << 2, LOAD_VAR, 1, LOAD_VAR, 0, PLUS, RETURN})
-	tryCompileNoLabel(t, "(let ((a (+ 1 2)) (b 10)) (- b a))", []Word{LOAD64, 2 << 2, LOAD64, 1 << 2, PLUS, LOAD64, 10 << 2, LOAD_VAR, 0, LOAD_VAR, 1, MINUS, RETURN})
+	tryCompileNoLabel(t, "(let ((a 1)) a)", []Word{LOAD64, 1 << 2, LOAD_VAR, 0, SLIDE, 1, RETURN})
+	tryCompileNoLabel(t, "(let ((a 1) (b 2)) (+ a b))", []Word{LOAD64, 1 << 2, LOAD64, 2 << 2, LOAD_VAR, 1, LOAD_VAR, 0, PLUS, SLIDE, 2, RETURN})
+	tryCompileNoLabel(t, "(let ((a (+ 1 2)) (b 10)) (- b a))", []Word{LOAD64, 2 << 2, LOAD64, 1 << 2, PLUS, LOAD64, 10 << 2, LOAD_VAR, 0, LOAD_VAR, 1, MINUS, SLIDE, 2, RETURN})
 }
 
 func TestCompileIf(t *testing.T) {

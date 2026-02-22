@@ -3,7 +3,7 @@ use std::{
     u64,
 };
 
-use eyre::{OptionExt, Result, eyre};
+use eyre::{Result, eyre};
 use num_enum::TryFromPrimitive;
 
 #[allow(non_camel_case_types)]
