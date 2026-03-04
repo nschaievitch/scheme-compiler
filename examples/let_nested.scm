@@ -1,1 +1,1 @@
-(let (a (let (c 10) c)) (b 22) (- b a))
+(let ((a (let ((c 10)) c)) (b 22)) (- b a))

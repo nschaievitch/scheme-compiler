@@ -1,0 +1,1 @@
+(let ((adder (lambda (x) (lambda (y) (+ x y))))) ((adder 10) 20))

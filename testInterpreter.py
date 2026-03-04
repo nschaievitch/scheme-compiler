@@ -114,11 +114,13 @@ testSuites = {
         ("(= 10 (char->integer (integer->char 10)))", "#t"),
     ],
     "Let expressions": [
-        ("(let (a 1) a)", 1),
-        ("(let (a 1) (b 2) (+ a b))", 3),
-        ("(let (a (+ 1 2)) (b 10) (- b a))", 7),
-        ("(let (a (let (c 10) c)) (b 22) (- b a))", 12),
-        ("(let (a 42) (let (b a) b))", 42),
+        ("(let ((a 1)) a)", 1),
+        ("(let ((a 1) (b 2)) (+ a b))", 3),
+        ("(let ((a (+ 1 2)) (b 10)) (- b a))", 7),
+        ("(let ((a (let ((c 10)) c)) (b 22)) (- b a))", 12),
+        ("(let ((a 42)) (let ((b a)) b))", 42),
+        ("(let ((a 1)) (let ((a 2)) a))", 2),
+        ("(cons (let ((a 10)) (+ a a)) 30)", "(20 . 30)")
     ],
     "If expressions": [
         ("(if #t 1 2)", 1),
@@ -129,30 +131,30 @@ testSuites = {
         ("(if #f (+ 1 2) 1)", 1),
         ("(if (= 10 10) (if #t 1 2) 3)", 1),
         ("(if (= 10 10) (if #f 1 2) 3)", 2),
-        ("(let (a 10) (b 16) (if (< a b) a b))", 10),
+        ("(let ((a 10) (b 16)) (if (< a b) a b))", 10),
     ],
     "cons/car/cdr": [
         ("(car (cons 1 2))", 1),
         ("(cdr (cons 1 2))", 2),
         ("(cdr (car (cons (cons 1 2) 3)))", 2),
-        ("(let (pair (cons 10 20)) (car pair)))", 10),
-        ("(let (pair (cons 10 (cons 20 30))) (car (cdr pair))))", 20),
+        ("(let ((pair (cons 10 20))) (car pair)))", 10),
+        ("(let ((pair (cons 10 (cons 20 30)))) (car (cdr pair))))", 20),
     ],
     "Vector operations": [
         ("(vector-ref (vector 1 2 3) 1)", 2),
         ("(vector-ref (vector 1 2 3) 0)", 1),
         ("(vector-ref (vector 1 2 3) 3)", ERROR),
-        ("(let (v (vector 1 2 3)) (vector-ref v 2))", 3),
+        ("(let ((v (vector 1 2 3))) (vector-ref v 2))", 3),
         ("(vector-ref (vector-set! (vector 1 2 3) 1 10) 1)", 10),
         ("(vector-set! (vector 1 2 3) 3 10)", ERROR),
-        ("(let (v1 (vector 1 2 3)) (v2 (vector 4 5 6)) (vector-ref v1 2))", 3),
-        ("(let (v1 (vector 1 2 3)) (v2 (vector 40 50 60)) (vector-ref v2 1))", 50),
+        ("(let ((v1 (vector 1 2 3)) (v2 (vector 4 5 6))) (vector-ref v1 2))", 3),
+        ("(let ((v1 (vector 1 2 3)) (v2 (vector 40 50 60))) (vector-ref v2 1))", 50),
         (
-            "(let (v1 (vector 1 2 3)) (v2 (vector 4 5 6)) (vector-ref (vector-append v1 v2) 4))",
+            "(let ((v1 (vector 1 2 3)) (v2 (vector 4 5 6))) (vector-ref (vector-append v1 v2) 4))",
             5,
         ),
         (
-            "(let (v1 (vector 1 2 3)) (v2 (vector 4 5 6)) (vector-ref (vector-append v1 v2) 2))",
+            "(let ((v1 (vector 1 2 3)) (v2 (vector 4 5 6))) (vector-ref (vector-append v1 v2) 2))",
             3,
         ),
     ],
@@ -184,16 +186,42 @@ testSuites = {
         ('(vector 1 "hola" 10)', '#(1 "hola" 10)'),
     ],
     "begin": [
-        ('(let (s "hola") (begin (string-set! s 3 #\\i) (string-ref s 3)))', "#\\i"),
+        ('(let ((s "hola")) (begin (string-set! s 3 #\\i) (string-ref s 3)))', "#\\i"),
         (
-            '(let (s "hola") (v (vector 1 2 3)) (begin (string-set! s 3 #\\i) (vector-set! v 2 5) (string-ref s 3)))',
+            '(let ((s "hola") (v (vector 1 2 3))) (begin (string-set! s 3 #\\i) (vector-set! v 2 5) (string-ref s 3)))',
             "#\\i",
         ),
         (
-            '(let (s "hola") (v (vector 1 2 3)) (begin (string-set! s 3 #\\i) (vector-set! v 2 5) (vector-ref v 2)))',
+            '(let ((s "hola") (v (vector 1 2 3))) (begin (string-set! s 3 #\\i) (vector-set! v 2 5) (vector-ref v 2)))',
             "5",
         ),
     ],
+    "labels": [("(labels ((f0 (code (x y) (- x y)))) (labelcall f0 25 15))", 10),
+               ("""
+                (labels (
+                    (f0 (code (x y) (- x y)))
+                    (f1 (code (x y) (+ (labelcall f0 x 1) y)))) 
+                (labelcall f1 10 100))
+                """, 109)],
+    "closure and funcall":
+        [
+            ("(labels ((f0 (code (x) (y) (- x y)))) (funcall (closure f0 4) 10))", 6),
+            ("(labels ((f_addx (code (y) (x) (+ x y)))) (let ((x 5)) (let ((add5 (closure f_addx x))) (funcall add5 37))))", 42),
+            ("(labels ((f_adder (code (y) (x) (+ x y))) (f_make (code (x) () (closure f_adder x)))) (let ((make-adder (closure f_make))) (let ((add7 (funcall make-adder 7))) (funcall add7 10))))", 17),
+            ("(labels ((f_inc (code (n) () (+ n 1))) (f_twice (code (f x) () (let ((t (funcall f x))) (funcall f t))))) (let ((inc (closure f_inc)) (twice (closure f_twice))) (funcall twice inc 10)))", 12)
+         ],
+    "lambdas":
+        [
+           ("((lambda (x) (+ x x)) 21)", 42),
+           ("(let ((adder (lambda (x) (lambda (y) (+ x y))))) ((adder 10) 20))", 30),
+           ("(let ((b 2)) (let ((a (lambda (y) (+ y b)))) (+ (a 1) (a 1))))", 6),
+           ("(let ((f (lambda (y) (cons 10 y)))) (cdr (f 20)))", 20),
+           ("(let ((first (lambda (p) (car p))) (app (lambda (f) (f 10)))) (app (first (cons (lambda (x) (+ x 100)) (lambda (x) (+ x x))))))", 110),
+           ("(let ((b 2)) (let ((a (lambda (y) (cons (let ((z 30)) (lambda () (+ y z))) (lambda (c) (- c b)))))) (let ((x (cdr (a 20)))) (x 3))))", 1),
+           ("(let ((b 2)) (let ((a (lambda (y) (cons (let ((z 11)) (lambda () (+ y z))) (lambda (a) (- a b)))))) ((car (a 50)))))", 61),
+           ("(let ((b 2)) (let ((a (lambda (y) (cons (let ((z 11)) (lambda () (+ y z))) (lambda (a) (- a b)))))) ((cdr (a 50)) 10)))", 8),
+
+        ]
 }
 
 passed = 0

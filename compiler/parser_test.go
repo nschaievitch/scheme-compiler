@@ -89,8 +89,8 @@ func TestParsesNestedSExp(t *testing.T) {
 }
 
 func TestParsesLet(t *testing.T) {
-	tryParse(t, "(let (a 1) a)", Let{[]Binding{{Identifier{"a"}, Uint{1}}}, Identifier{"a"}})
-	tryParse(t, "(let (a 1) (b (+ 1 2)) (+ a b))", Let{[]Binding{{Identifier{"a"}, Uint{1}}, {Identifier{"b"}, SExp{[]Node{Identifier{"+"}, Uint{1}, Uint{2}}}}}, SExp{[]Node{Identifier{"+"}, Identifier{"a"}, Identifier{"b"}}}})
+	tryParse(t, "(let ((a 1)) a)", Let{[]Binding{{Identifier{"a"}, Uint{1}}}, Identifier{"a"}})
+	tryParse(t, "(let ((a 1) (b (+ 1 2))) (+ a b))", Let{[]Binding{{Identifier{"a"}, Uint{1}}, {Identifier{"b"}, SExp{[]Node{Identifier{"+"}, Uint{1}, Uint{2}}}}}, SExp{[]Node{Identifier{"+"}, Identifier{"a"}, Identifier{"b"}}}})
 }
 
 func TestParsesIf(t *testing.T) {
