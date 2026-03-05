@@ -48,9 +48,11 @@ pub enum Op {
     FUNCALL,
     LOAD_CLOSURE_VAR,
     SLIDE,
+    TAILCALL,
 }
 
-const HEAP_SIZE: usize = 2 << 10;
+const HEAP_SIZE: usize = 1 << 10;
+const DEBUG_MAX_STACK_SIZE: usize = 1 << 8;
 
 const FIXNUM_MASK: u64 = 0b11;
 const FIXNUM_TAG: u64 = 0b00;
@@ -261,6 +263,9 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
     loop {
         let instr = read_op(readword(&code, &mut pc)?)?;
         dbg!(&instr, &pc, &code[pc - 1]);
+
+        debug_assert!(stack.len() <= DEBUG_MAX_STACK_SIZE, "x must be positive");
+
         match instr {
             Op::LOAD64 => {
                 let boxed_num = readword(&code, &mut pc)?;
@@ -1118,6 +1123,8 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 stack.truncate(stack.len() - n);
                 stack.push(val);
             }
+
+            Op::TAILCALL => {}
         }
     }
 }

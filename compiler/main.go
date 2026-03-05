@@ -52,6 +52,7 @@ const (
 	FUNCALL
 	LOAD_CLOSURE_VAR
 	SLIDE
+	TAILCALL
 )
 
 const FIXNUM_MASK = 0b11
@@ -172,7 +173,7 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 
 			*stackIndex -= len(s.Children) - 2
 			return ws, nil
-		} else if v.Name == "funcall" { // ugly repeated code... should improve...
+		} else if v.Name == "funcall" || v.Name == "tailcall" { // ugly repeated code... should improve...
 			ws = append(ws, SETUP_STACK_BASE)
 
 			for i := len(s.Children) - 1; i >= 1; i-- {
@@ -185,7 +186,11 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 				ws = append(ws, childrenWords...)
 			}
 
-			ws = append(ws, FUNCALL)
+			if v.Name == "funcall" {
+				ws = append(ws, FUNCALL)
+			} else {
+				ws = append(ws, TAILCALL)
+			}
 
 			*stackIndex -= len(s.Children) - 2
 			return ws, nil

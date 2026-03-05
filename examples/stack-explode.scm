@@ -1,0 +1,1 @@
+(let ((adder (lambda (x) (if (= x 0) 0 (+ x 10))))) (adder 6))

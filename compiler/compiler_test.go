@@ -98,3 +98,4 @@ func TestCompileIf(t *testing.T) {
 func TestCompileLabel(t *testing.T) {
 	tryCompile(t, "(labels ((f0 (code (x y) (- x y)))) (labelcall f0 25 15))", []Word{8, 2, LOAD_VAR, 0, LOAD_VAR, 1, MINUS, RETURN, SETUP_STACK_BASE, LOAD64, 15 << 2, LOAD64, 25 << 2, LABELCALL, 1, RETURN})
 }
+annas-archive.gl, 
