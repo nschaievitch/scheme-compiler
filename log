@@ -1,0 +1,2165 @@
+Building all...
+
+----------------
+Testing compiler
+----------------
+
+PASS
+ok  	compiler	0.001s
+
+-------------------
+Testing interpreter
+-------------------
+
+[1mLiterals: [0m
+[32m
+	 passed 4/4[0m
+
+[1mUnary functions: [0m
+[31mError interpreting (char->integer #\a): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = CHAR_TO_INTEGER
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 8
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133723) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (integer->char 97): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = INTEGER_TO_CHAR
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 7
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133735) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (add1 10): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = ADD1
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 5
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133747) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (sub1 10): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = SUB1
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 6
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133759) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (null? 1): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = NULLP
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 9
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133771) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (zero? 0): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = ZEROP
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 10
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133777) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (zero? 1): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = ZEROP
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 10
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133783) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (not #t): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_BOOL
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 2
+[src/main.rs:276:9] &instr = NOT
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 11
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133795) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (not #f): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_BOOL
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 2
+[src/main.rs:276:9] &instr = NOT
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 11
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133801) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (boolean? #f): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_BOOL
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 2
+[src/main.rs:276:9] &instr = BOOLEANP
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 13
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133813) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (boolean? 10): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = BOOLEANP
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 13
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133819) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (integer? 10): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = INTEGERP
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 12
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133825) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (integer? #\a): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = INTEGERP
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 12
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133831) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31m
+	 passed 6/19[0m
+
+[1mBinary functions: [0m
+[31mError interpreting (+ 1 2): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = PLUS
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 14
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133838) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (* 10 10): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = TIMES
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 15
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133856) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (- 10 8): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = MINUS
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 16
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133874) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (< 10 8): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LESS_THAN
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 17
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133892) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (< 1 8): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LESS_THAN
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 17
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133898) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (= 1 1): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = EQUALP
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 18
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133916) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (= 1 2): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = EQUALP
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 18
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133922) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (= #\a #\a): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = EQUALP
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 18
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133928) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (= #\a #\b): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = EQUALP
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 18
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133934) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (= #f #f): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_BOOL
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 2
+[src/main.rs:276:9] &instr = LOAD_BOOL
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 2
+[src/main.rs:276:9] &instr = EQUALP
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 18
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133940) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (= #t #t): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_BOOL
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 2
+[src/main.rs:276:9] &instr = LOAD_BOOL
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 2
+[src/main.rs:276:9] &instr = EQUALP
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 18
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133946) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (= #t #f): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_BOOL
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 2
+[src/main.rs:276:9] &instr = LOAD_BOOL
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 2
+[src/main.rs:276:9] &instr = EQUALP
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 18
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133952) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (= #t 1): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_BOOL
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 2
+[src/main.rs:276:9] &instr = EQUALP
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 18
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133958) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31m
+	 passed 8/21[0m
+
+[1mNested functions: [0m
+[31mError interpreting (not (integer? (integer->char 28))): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = INTEGER_TO_CHAR
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 7
+[src/main.rs:276:9] &instr = INTEGERP
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 12
+[src/main.rs:276:9] &instr = NOT
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 11
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133964) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (= (- 10 8) (+ 1 1)): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = PLUS
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 14
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = MINUS
+[src/main.rs:276:9] &pc = 12
+[src/main.rs:276:9] &code[pc - 1] = 16
+[src/main.rs:276:9] &instr = EQUALP
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 18
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 14
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133970) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (= 10 (char->integer (integer->char 10))): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = INTEGER_TO_CHAR
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 7
+[src/main.rs:276:9] &instr = CHAR_TO_INTEGER
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 8
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = EQUALP
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 18
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (133976) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31m
+	 passed 0/3[0m
+
+[1mLet expressions: [0m
+[31mError interpreting (let ((a 1) (b 2)) (+ a b)): [src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 4
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    4,
+    8,
+]
+[src/main.rs:625:17] &stack_index = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    4,
+    8,
+    8,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = PLUS
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 14
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 12
+[src/main.rs:276:9] &code[pc - 1] = 39
+[src/main.rs:1160:21] &stack = [
+    4,
+    8,
+]
+Error: Invalid closure pointer 12
+
+Location:
+    src/main.rs:1161:32
+[0m
+[31mError interpreting (let ((a (+ 1 2)) (b 10)) (- b a)): [src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 4
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = PLUS
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 14
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    12,
+    40,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 12
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    12,
+    40,
+    12,
+]
+[src/main.rs:625:17] &stack_index = 1
+[src/main.rs:276:9] &instr = MINUS
+[src/main.rs:276:9] &pc = 14
+[src/main.rs:276:9] &code[pc - 1] = 16
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 15
+[src/main.rs:276:9] &code[pc - 1] = 39
+[src/main.rs:1160:21] &stack = [
+    12,
+    40,
+]
+Error: Invalid closure pointer 28
+
+Location:
+    src/main.rs:1161:32
+[0m
+[31mError interpreting (let ((a (let ((c 10)) c)) (b 22)) (- b a)): [src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 4
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    40,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = SLIDE
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 38
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    40,
+    88,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    40,
+    88,
+    40,
+]
+[src/main.rs:625:17] &stack_index = 1
+[src/main.rs:276:9] &instr = MINUS
+[src/main.rs:276:9] &pc = 15
+[src/main.rs:276:9] &code[pc - 1] = 16
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 16
+[src/main.rs:276:9] &code[pc - 1] = 39
+[src/main.rs:1160:21] &stack = [
+    40,
+    88,
+]
+Error: Invalid closure pointer 48
+
+Location:
+    src/main.rs:1161:32
+[0m
+[31mError interpreting (cons (let ((a 10)) (+ a a)) 30): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    120,
+    40,
+]
+[src/main.rs:625:17] &stack_index = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    120,
+    40,
+    40,
+]
+[src/main.rs:625:17] &stack_index = 1
+[src/main.rs:276:9] &instr = PLUS
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 14
+[src/main.rs:276:9] &instr = SLIDE
+[src/main.rs:276:9] &pc = 12
+[src/main.rs:276:9] &code[pc - 1] = 38
+[src/main.rs:276:9] &instr = CONS
+[src/main.rs:276:9] &pc = 14
+[src/main.rs:276:9] &code[pc - 1] = 22
+[src/main.rs:661:17] &stack = [
+    120,
+    80,
+]
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 15
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134018) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31m
+	 passed 3/7[0m
+
+[1mIf expressions: [0m
+[31mError interpreting (if #t (+ 1 2) 1): [src/main.rs:276:9] &instr = LOAD_BOOL
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 2
+[src/main.rs:276:9] &instr = POP_JUMP_IF_FALSE
+[src/main.rs:276:9] &pc = 4
+[src/main.rs:276:9] &code[pc - 1] = 20
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = PLUS
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 14
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 12
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134048) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31m
+	 passed 8/9[0m
+
+[1mcons/car/cdr: [0m
+[31mError interpreting (car (cons 1 2)): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = CONS
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 22
+[src/main.rs:661:17] &stack = [
+    8,
+    4,
+]
+[src/main.rs:276:9] &instr = CAR
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 23
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134078) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (cdr (cons 1 2)): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = CONS
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 22
+[src/main.rs:661:17] &stack = [
+    8,
+    4,
+]
+[src/main.rs:276:9] &instr = CDR
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 24
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134084) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (cdr (car (cons (cons 1 2) 3))): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = CONS
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 22
+[src/main.rs:661:17] &stack = [
+    12,
+    8,
+    4,
+]
+[src/main.rs:276:9] &instr = CONS
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 22
+[src/main.rs:661:17] &stack = [
+    12,
+    1,
+]
+[src/main.rs:276:9] &instr = CAR
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 23
+[src/main.rs:276:9] &instr = CDR
+[src/main.rs:276:9] &pc = 12
+[src/main.rs:276:9] &code[pc - 1] = 24
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134090) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (let ((pair (cons 10 20))) (car pair))): [src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 4
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = CONS
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 22
+[src/main.rs:661:17] &stack = [
+    80,
+    40,
+]
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    1,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = CAR
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 23
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 39
+[src/main.rs:1160:21] &stack = [
+    1,
+]
+Error: Invalid closure pointer 40
+
+Location:
+    src/main.rs:1161:32
+[0m
+[31mError interpreting (let ((pair (cons 10 (cons 20 30)))) (car (cdr pair)))): [src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 4
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = CONS
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 22
+[src/main.rs:661:17] &stack = [
+    120,
+    80,
+]
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = CONS
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 22
+[src/main.rs:661:17] &stack = [
+    1,
+    40,
+]
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    17,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = CDR
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 24
+[src/main.rs:276:9] &instr = CAR
+[src/main.rs:276:9] &pc = 14
+[src/main.rs:276:9] &code[pc - 1] = 23
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 15
+[src/main.rs:276:9] &code[pc - 1] = 39
+[src/main.rs:1160:21] &stack = [
+    17,
+]
+Error: Invalid closure pointer 80
+
+Location:
+    src/main.rs:1161:32
+[0m
+[31m
+	 passed 0/5[0m
+
+[1mVector operations: [0m
+[31mError interpreting (vector-ref (vector 1 2 3) 1): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = VECTOR
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 25
+[src/main.rs:276:9] &instr = VECTOR_REF
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 26
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 14
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134108) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (vector-ref (vector 1 2 3) 0): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = VECTOR
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 25
+[src/main.rs:276:9] &instr = VECTOR_REF
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 26
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 14
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134114) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (let ((v (vector 1 2 3))) (vector-ref v 2)): [src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 4
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = VECTOR
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 25
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    2,
+    8,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = VECTOR_REF
+[src/main.rs:276:9] &pc = 15
+[src/main.rs:276:9] &code[pc - 1] = 26
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 16
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134126) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (vector-ref (vector-set! (vector 1 2 3) 1 10) 1): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = VECTOR
+[src/main.rs:276:9] &pc = 15
+[src/main.rs:276:9] &code[pc - 1] = 25
+[src/main.rs:276:9] &instr = VECTOR_SET
+[src/main.rs:276:9] &pc = 17
+[src/main.rs:276:9] &code[pc - 1] = 27
+[src/main.rs:276:9] &instr = VECTOR_REF
+[src/main.rs:276:9] &pc = 18
+[src/main.rs:276:9] &code[pc - 1] = 26
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 19
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134133) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (let ((v1 (vector 1 2 3)) (v2 (vector 4 5 6))) (vector-ref v1 2)): [src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 4
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = VECTOR
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 25
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 12
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 14
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = VECTOR
+[src/main.rs:276:9] &pc = 16
+[src/main.rs:276:9] &code[pc - 1] = 25
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 18
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 19
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 21
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    2,
+    34,
+    8,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = VECTOR_REF
+[src/main.rs:276:9] &pc = 23
+[src/main.rs:276:9] &code[pc - 1] = 26
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 24
+[src/main.rs:276:9] &code[pc - 1] = 39
+[src/main.rs:1160:21] &stack = [
+    2,
+    34,
+]
+Error: Invalid closure pointer 12
+
+Location:
+    src/main.rs:1161:32
+[0m
+[31mError interpreting (let ((v1 (vector 1 2 3)) (v2 (vector 40 50 60))) (vector-ref v2 1)): [src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 4
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = VECTOR
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 25
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 12
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 14
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = VECTOR
+[src/main.rs:276:9] &pc = 16
+[src/main.rs:276:9] &code[pc - 1] = 25
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 18
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 19
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 21
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    2,
+    34,
+    4,
+]
+[src/main.rs:625:17] &stack_index = 1
+[src/main.rs:276:9] &instr = VECTOR_REF
+[src/main.rs:276:9] &pc = 23
+[src/main.rs:276:9] &code[pc - 1] = 26
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 24
+[src/main.rs:276:9] &code[pc - 1] = 39
+[src/main.rs:1160:21] &stack = [
+    2,
+    34,
+]
+Error: Invalid closure pointer 200
+
+Location:
+    src/main.rs:1161:32
+[0m
+[31mError interpreting (let ((v1 (vector 1 2 3)) (v2 (vector 4 5 6))) (vector-ref (vector-append v1 v2) 4)): [src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 4
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = VECTOR
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 25
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 12
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 14
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = VECTOR
+[src/main.rs:276:9] &pc = 16
+[src/main.rs:276:9] &code[pc - 1] = 25
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 18
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 19
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 21
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    2,
+    34,
+    16,
+]
+[src/main.rs:625:17] &stack_index = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 23
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    2,
+    34,
+    16,
+    34,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = VECTOR_APPEND
+[src/main.rs:276:9] &pc = 25
+[src/main.rs:276:9] &code[pc - 1] = 28
+[src/main.rs:276:9] &instr = VECTOR_REF
+[src/main.rs:276:9] &pc = 26
+[src/main.rs:276:9] &code[pc - 1] = 26
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 27
+[src/main.rs:276:9] &code[pc - 1] = 39
+[src/main.rs:1160:21] &stack = [
+    2,
+    34,
+]
+Error: Invalid closure pointer 20
+
+Location:
+    src/main.rs:1161:32
+[0m
+[31mError interpreting (let ((v1 (vector 1 2 3)) (v2 (vector 4 5 6))) (vector-ref (vector-append v1 v2) 2)): [src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 4
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = VECTOR
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 25
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 12
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 14
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = VECTOR
+[src/main.rs:276:9] &pc = 16
+[src/main.rs:276:9] &code[pc - 1] = 25
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 18
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 19
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 21
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    2,
+    34,
+    8,
+]
+[src/main.rs:625:17] &stack_index = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 23
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    2,
+    34,
+    8,
+    34,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = VECTOR_APPEND
+[src/main.rs:276:9] &pc = 25
+[src/main.rs:276:9] &code[pc - 1] = 28
+[src/main.rs:276:9] &instr = VECTOR_REF
+[src/main.rs:276:9] &pc = 26
+[src/main.rs:276:9] &code[pc - 1] = 26
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 27
+[src/main.rs:276:9] &code[pc - 1] = 39
+[src/main.rs:1160:21] &stack = [
+    2,
+    34,
+]
+Error: Invalid closure pointer 12
+
+Location:
+    src/main.rs:1161:32
+[0m
+[31m
+	 passed 2/10[0m
+
+[1mString operations: [0m
+[31mError interpreting (string-ref "hola" 2): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = STRING
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 29
+[src/main.rs:276:9] &instr = STRING_REF
+[src/main.rs:276:9] &pc = 15
+[src/main.rs:276:9] &code[pc - 1] = 30
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 16
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134169) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (string-ref (string #\h #\o #\l #\a #\m #\u #\n #\d #\o) 2): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 15
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 17
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 19
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 21
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = STRING
+[src/main.rs:276:9] &pc = 23
+[src/main.rs:276:9] &code[pc - 1] = 29
+[src/main.rs:276:9] &instr = STRING_REF
+[src/main.rs:276:9] &pc = 25
+[src/main.rs:276:9] &code[pc - 1] = 30
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 26
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134175) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (string-ref (string #\h #\o #\l #\a #\m #\u #\n #\d #\o) 6): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 15
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 17
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 19
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 21
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = STRING
+[src/main.rs:276:9] &pc = 23
+[src/main.rs:276:9] &code[pc - 1] = 29
+[src/main.rs:276:9] &instr = STRING_REF
+[src/main.rs:276:9] &pc = 25
+[src/main.rs:276:9] &code[pc - 1] = 30
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 26
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134181) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (string-ref (string-set! "hola" 3 #\i) 3): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 15
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = STRING
+[src/main.rs:276:9] &pc = 17
+[src/main.rs:276:9] &code[pc - 1] = 29
+[src/main.rs:276:9] &instr = STRING_SET
+[src/main.rs:276:9] &pc = 19
+[src/main.rs:276:9] &code[pc - 1] = 31
+[src/main.rs:276:9] &instr = STRING_REF
+[src/main.rs:276:9] &pc = 20
+[src/main.rs:276:9] &code[pc - 1] = 30
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 21
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134194) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (string-ref (string-append (string #\h #\o #\l #\a) (string #\m #\u #\n #\d #\o)) 6): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = STRING
+[src/main.rs:276:9] &pc = 15
+[src/main.rs:276:9] &code[pc - 1] = 29
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 17
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 19
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 21
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 23
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = STRING
+[src/main.rs:276:9] &pc = 25
+[src/main.rs:276:9] &code[pc - 1] = 29
+[src/main.rs:276:9] &instr = STRING_APPEND
+[src/main.rs:276:9] &pc = 27
+[src/main.rs:276:9] &code[pc - 1] = 32
+[src/main.rs:276:9] &instr = STRING_REF
+[src/main.rs:276:9] &pc = 28
+[src/main.rs:276:9] &code[pc - 1] = 30
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 29
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134200) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (string-ref (string-append "hola" (string #\m #\u #\n #\d #\o)) 0): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = STRING
+[src/main.rs:276:9] &pc = 15
+[src/main.rs:276:9] &code[pc - 1] = 29
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 17
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 19
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 21
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 23
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = STRING
+[src/main.rs:276:9] &pc = 25
+[src/main.rs:276:9] &code[pc - 1] = 29
+[src/main.rs:276:9] &instr = STRING_APPEND
+[src/main.rs:276:9] &pc = 27
+[src/main.rs:276:9] &code[pc - 1] = 32
+[src/main.rs:276:9] &instr = STRING_REF
+[src/main.rs:276:9] &pc = 28
+[src/main.rs:276:9] &code[pc - 1] = 30
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 29
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134207) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31m
+	 passed 1/7[0m
+
+[1mPrinting boxed heap values: [0m
+[31mError interpreting (cons 1 2): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = CONS
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 22
+[src/main.rs:661:17] &stack = [
+    8,
+    4,
+]
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134218) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (cons 1 (cons 2 3)): [src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = CONS
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 22
+[src/main.rs:661:17] &stack = [
+    12,
+    8,
+]
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = CONS
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 22
+[src/main.rs:661:17] &stack = [
+    1,
+    4,
+]
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134224) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31m
+	 passed 2/4[0m
+
+[1mbegin: [0m
+[31mError interpreting (let ((s "hola")) (begin (string-set! s 3 #\i) (string-ref s 3))): [src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 4
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = STRING
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 29
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 12
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 15
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 17
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    3,
+    26895,
+    12,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = STRING_SET
+[src/main.rs:276:9] &pc = 19
+[src/main.rs:276:9] &code[pc - 1] = 31
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 20
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134236) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (let ((s "hola") (v (vector 1 2 3))) (begin (string-set! s 3 #\i) (vector-set! v 2 5) (string-ref s 3))): [src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 4
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = STRING
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 29
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 12
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 14
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 16
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = VECTOR
+[src/main.rs:276:9] &pc = 18
+[src/main.rs:276:9] &code[pc - 1] = 25
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 20
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 21
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 23
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 25
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    3,
+    18,
+    26895,
+    12,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = STRING_SET
+[src/main.rs:276:9] &pc = 27
+[src/main.rs:276:9] &code[pc - 1] = 31
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 28
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134242) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31mError interpreting (let ((s "hola") (v (vector 1 2 3))) (begin (string-set! s 3 #\i) (vector-set! v 2 5) (vector-ref v 2))): [src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 2
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 4
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 6
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = STRING
+[src/main.rs:276:9] &pc = 10
+[src/main.rs:276:9] &code[pc - 1] = 29
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 12
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 14
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 16
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = VECTOR
+[src/main.rs:276:9] &pc = 18
+[src/main.rs:276:9] &code[pc - 1] = 25
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 20
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD_CHAR
+[src/main.rs:276:9] &pc = 21
+[src/main.rs:276:9] &code[pc - 1] = 3
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 23
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 25
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    3,
+    18,
+    26895,
+    12,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = STRING_SET
+[src/main.rs:276:9] &pc = 27
+[src/main.rs:276:9] &code[pc - 1] = 31
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 28
+[src/main.rs:276:9] &code[pc - 1] = 39
+
+thread 'main' (134248) panicked at src/main.rs:1149:29:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[0m
+[31m
+	 passed 0/3[0m
+
+[1mlabels: [0m
+[31mError compiling (labels ((f0 (code (x y) (- x y)))) (labelcall f0 25 15)): panic: Unknown identifier labelcall
+
+goroutine 1 [running]:
+main.check(...)
+	/home/nschaievitch/Favorites/Escuela/DartmouthNotes/COSC294/Assignments/cosc294-compiler/compiler/main.go:1103
+main.main()
+	/home/nschaievitch/Favorites/Escuela/DartmouthNotes/COSC294/Assignments/cosc294-compiler/compiler/main.go:1132 +0x1c6
+[0m
+[31mError compiling 
+                (labels (
+                    (f0 (code (x y) (- x y)))
+                    (f1 (code (x y) (+ (labelcall f0 x 1) y)))) 
+                (labelcall f1 10 100))
+                : panic: Unknown identifier labelcall
+
+goroutine 1 [running]:
+main.check(...)
+	/home/nschaievitch/Favorites/Escuela/DartmouthNotes/COSC294/Assignments/cosc294-compiler/compiler/main.go:1103
+main.main()
+	/home/nschaievitch/Favorites/Escuela/DartmouthNotes/COSC294/Assignments/cosc294-compiler/compiler/main.go:1132 +0x1c6
+[0m
+[31m
+	 passed 0/2[0m
+
+[1mclosure and funcall: [0m
+[31mError compiling (labels ((f0 (code (x) (y) (- x y)))) (funcall (closure f0 4) 10)): panic: Unknown identifier funcall
+
+goroutine 1 [running]:
+main.check(...)
+	/home/nschaievitch/Favorites/Escuela/DartmouthNotes/COSC294/Assignments/cosc294-compiler/compiler/main.go:1103
+main.main()
+	/home/nschaievitch/Favorites/Escuela/DartmouthNotes/COSC294/Assignments/cosc294-compiler/compiler/main.go:1132 +0x1c6
+[0m
+[31mError compiling (labels ((f_addx (code (y) (x) (+ x y)))) (let ((x 5)) (let ((add5 (closure f_addx x))) (funcall add5 37)))): panic: Unknown identifier funcall
+
+goroutine 1 [running]:
+main.check(...)
+	/home/nschaievitch/Favorites/Escuela/DartmouthNotes/COSC294/Assignments/cosc294-compiler/compiler/main.go:1103
+main.main()
+	/home/nschaievitch/Favorites/Escuela/DartmouthNotes/COSC294/Assignments/cosc294-compiler/compiler/main.go:1132 +0x1c6
+[0m
+[31mError compiling (labels ((f_adder (code (y) (x) (+ x y))) (f_make (code (x) () (closure f_adder x)))) (let ((make-adder (closure f_make))) (let ((add7 (funcall make-adder 7))) (funcall add7 10)))): panic: Unknown identifier funcall
+
+goroutine 1 [running]:
+main.check(...)
+	/home/nschaievitch/Favorites/Escuela/DartmouthNotes/COSC294/Assignments/cosc294-compiler/compiler/main.go:1103
+main.main()
+	/home/nschaievitch/Favorites/Escuela/DartmouthNotes/COSC294/Assignments/cosc294-compiler/compiler/main.go:1132 +0x1c6
+[0m
+[31mError compiling (labels ((f_inc (code (n) () (+ n 1))) (f_twice (code (f x) () (let ((t (funcall f x))) (funcall f t))))) (let ((inc (closure f_inc)) (twice (closure f_twice))) (funcall twice inc 10))): panic: Unknown identifier funcall
+
+goroutine 1 [running]:
+main.check(...)
+	/home/nschaievitch/Favorites/Escuela/DartmouthNotes/COSC294/Assignments/cosc294-compiler/compiler/main.go:1103
+main.main()
+	/home/nschaievitch/Favorites/Escuela/DartmouthNotes/COSC294/Assignments/cosc294-compiler/compiler/main.go:1132 +0x1c6
+[0m
+[31m
+	 passed 0/4[0m
+
+[1mlambdas: [0m
+[31mError interpreting (let ((b 2)) (let ((a (lambda (y) (+ y b)))) (+ (a 1) (a 1)))): [src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 11
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    8,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = CLOSURE
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 35
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 16
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 17
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 18
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 20
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    8,
+    6,
+    4,
+]
+[src/main.rs:625:17] &stack_index = 1
+[src/main.rs:276:9] &instr = FUNCALL
+[src/main.rs:276:9] &pc = 22
+[src/main.rs:276:9] &code[pc - 1] = 36
+[src/main.rs:1119:17] &stack = [
+    8,
+    6,
+    4,
+]
+[src/main.rs:1119:17] &jump_pos = 2
+[src/main.rs:1119:17] &label_add = 1
+[src/main.rs:276:9] &instr = LOAD_CLOSURE_VAR
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 37
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    8,
+    6,
+    4,
+    8,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = PLUS
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 14
+[src/main.rs:276:9] &instr = RETURN
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 4
+[src/main.rs:309:17] &control_stack = [
+    0,
+    2,
+    0,
+    22,
+    6,
+]
+[src/main.rs:321:17] print_boxed(val.clone(), &heap[..])? = "3"
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 23
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 24
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 26
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    8,
+    6,
+    12,
+    4,
+]
+[src/main.rs:625:17] &stack_index = 1
+[src/main.rs:276:9] &instr = FUNCALL
+[src/main.rs:276:9] &pc = 28
+[src/main.rs:276:9] &code[pc - 1] = 36
+[src/main.rs:1119:17] &stack = [
+    8,
+    6,
+    12,
+    4,
+]
+[src/main.rs:1119:17] &jump_pos = 2
+[src/main.rs:1119:17] &label_add = 1
+[src/main.rs:276:9] &instr = LOAD_CLOSURE_VAR
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 37
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    8,
+    6,
+    12,
+    4,
+    8,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = PLUS
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 14
+[src/main.rs:276:9] &instr = RETURN
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 4
+[src/main.rs:309:17] &control_stack = [
+    0,
+    2,
+    0,
+    28,
+    6,
+]
+[src/main.rs:321:17] print_boxed(val.clone(), &heap[..])? = "3"
+[src/main.rs:276:9] &instr = PLUS
+[src/main.rs:276:9] &pc = 29
+[src/main.rs:276:9] &code[pc - 1] = 14
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 30
+[src/main.rs:276:9] &code[pc - 1] = 39
+[src/main.rs:1160:21] &stack = [
+    8,
+    6,
+]
+Error: Invalid closure pointer 24
+
+Location:
+    src/main.rs:1161:32
+[0m
+[31mError interpreting (let ((f (lambda (y) (cons 10 y)))) (cdr (f 20))): [src/main.rs:276:9] &instr = CLOSURE
+[src/main.rs:276:9] &pc = 9
+[src/main.rs:276:9] &code[pc - 1] = 35
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 12
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = SETUP_STACK_BASE
+[src/main.rs:276:9] &pc = 13
+[src/main.rs:276:9] &code[pc - 1] = 33
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 14
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 16
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    6,
+    80,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = FUNCALL
+[src/main.rs:276:9] &pc = 18
+[src/main.rs:276:9] &code[pc - 1] = 36
+[src/main.rs:1119:17] &stack = [
+    6,
+    80,
+]
+[src/main.rs:1119:17] &jump_pos = 2
+[src/main.rs:1119:17] &label_add = 1
+[src/main.rs:276:9] &instr = LOAD_VAR
+[src/main.rs:276:9] &pc = 3
+[src/main.rs:276:9] &code[pc - 1] = 19
+[src/main.rs:625:17] &stack = [
+    6,
+    80,
+]
+[src/main.rs:625:17] &stack_index = 0
+[src/main.rs:276:9] &instr = LOAD64
+[src/main.rs:276:9] &pc = 5
+[src/main.rs:276:9] &code[pc - 1] = 1
+[src/main.rs:276:9] &instr = CONS
+[src/main.rs:276:9] &pc = 7
+[src/main.rs:276:9] &code[pc - 1] = 22
+[src/main.rs:661:17] &stack = [
+    6,
+    80,
+    80,
+    40,
+]
+[src/main.rs:276:9] &instr = RETURN
+[src/main.rs:276:9] &pc = 8
+[src/main.rs:276:9] &code[pc - 1] = 4
+[src/main.rs:309:17] &control_stack = [
+    0,
+    1,
+    0,
+    18,
+    6,
+]
+[src/main.rs:321:17] print_boxed(val.clone(), &heap[..])? = "(10 . 20)"
+[src/main.rs:276:9] &instr = CDR
+[src/main.rs:276:9] &pc = 19
+[src/main.rs:276:9] &code[pc - 1] = 24
+[src/main.rs:276:9] &instr = TAILCALL
+[src/main.rs:276:9] &pc = 20
+[src/main.rs:276:9] &code[pc - 1] = 39
+[src/main.rs:1160:21] &stack = [
+    6,
+]
+Error: Invalid closure pointer 80
+
+Location:
+    src/main.rs:1161:32
+[0m
+[31m
+	 passed 6/8[0m
+
+[1mletrec: [0m
+[32m
+	 passed 5/5[0m
+
+[1mtailcall: [0m
+[32m
+	 passed 4/4[0m
+
+[1m
+
+Passed 49 out of 115[0m

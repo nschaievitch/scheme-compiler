@@ -53,6 +53,8 @@ const (
 	LOAD_CLOSURE_VAR
 	SLIDE
 	TAILCALL
+	LOAD_VAR_DEFER
+	SET_DEFERRED
 )
 
 const FIXNUM_MASK = 0b11
@@ -68,8 +70,9 @@ const BOOLEAN_TAG = 0b0011111
 const BOOLEAN_SHIFT = 7
 
 type VariableResolution struct {
-	Offset       int
-	IsClosureVar bool
+	Offset         int
+	IsClosureVar   bool
+	IsDeferredLoad bool
 }
 type Environment map[Identifier]VariableResolution
 
@@ -190,6 +193,7 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 				ws = append(ws, FUNCALL)
 			} else {
 				ws = append(ws, TAILCALL)
+				ws = append(ws, Word((len(s.Children) - 2)))
 			}
 
 			*stackIndex -= len(s.Children) - 2
@@ -325,9 +329,13 @@ func (i Identifier) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 		if varRes.IsClosureVar {
 			return []Word{LOAD_CLOSURE_VAR, Word(varRes.Offset)}, nil
 
-		} else {
-			return []Word{LOAD_VAR, Word(varRes.Offset)}, nil
 		}
+
+		if varRes.IsDeferredLoad {
+			return []Word{LOAD_VAR_DEFER, Word(varRes.Offset)}, nil
+		}
+
+		return []Word{LOAD_VAR, Word(varRes.Offset)}, nil
 	}
 }
 
@@ -353,7 +361,58 @@ func (l Let) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 
 		code = append(code, val...)
 
-		(*env)[b.Identifier] = VariableResolution{*stackIndex - 1, false}
+		(*env)[b.Identifier] = VariableResolution{*stackIndex - 1, false, false}
+	}
+
+	body, err := l.Body.Compile(env, stackIndex)
+
+	if err != nil {
+		return []Word{}, err
+	}
+
+	code = append(code, body...)
+	code = append(code, SLIDE, Word(len(l.Bindings)))
+	*stackIndex -= len(l.Bindings)
+
+	return code, nil
+}
+
+type LetRec struct {
+	Bindings []Binding
+	Body     Node
+}
+
+func (l LetRec) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	code := []Word{}
+	// Evaluate bindings and save stack positions
+	for _, b := range l.Bindings {
+		_, ok := b.Value.(Closure)
+
+		if !ok {
+			return nil, fmt.Errorf("Not implemented: letrec can only be used with lambdas")
+		}
+
+		(*env)[b.Identifier] = VariableResolution{*stackIndex, false, true}
+
+		*stackIndex += 1
+	}
+
+	for _, b := range l.Bindings {
+		val, err := b.Value.Compile(env, stackIndex)
+
+		if err != nil {
+			return []Word{}, err
+		}
+
+		code = append(code, val...)
+	}
+
+	code = append(code, SET_DEFERRED, Word(len(l.Bindings)))
+
+	for _, b := range l.Bindings {
+		v := (*env)[b.Identifier]
+		v.IsDeferredLoad = false
+		(*env)[b.Identifier] = v
 	}
 
 	body, err := l.Body.Compile(env, stackIndex)
@@ -511,11 +570,11 @@ func (c Code) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	localEnv = CopyMap(*env)
 
 	for i, v := range c.Vars {
-		localEnv[v] = VariableResolution{len(c.Vars) - i - 1, false} // vars should be in %ebp + varNum, in reverse order
+		localEnv[v] = VariableResolution{len(c.Vars) - i - 1, false, false} // vars should be in %ebp + varNum, in reverse order
 	}
 
 	for i, v := range c.FreeVars {
-		localEnv[v] = VariableResolution{i, true} // free vars are taken from the closure
+		localEnv[v] = VariableResolution{i, true, false} // free vars are taken from the closure
 	}
 
 	localStackIndex := len(c.Vars)
@@ -552,7 +611,7 @@ func (l Labels) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	code := make([]Word, len(l.LabelList)+1) // we store the "main" first
 
 	for i, label := range l.LabelList {
-		(*env)[label.Identifier] = VariableResolution{i + 1, false}
+		(*env)[label.Identifier] = VariableResolution{i + 1, false, false}
 	}
 
 	for i, label := range l.LabelList {
@@ -645,6 +704,9 @@ var BUILTINS = map[string]bool{
 	"string-ref":    true,
 	"string-set!":   true,
 	"string-append": true,
+	"funcall":       true,
+	"tailcall":      true,
+	"labelcall":     true,
 }
 
 func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transformed Node, free map[Identifier]bool) {
@@ -677,6 +739,36 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transfo
 		}
 
 		return Let{
+			Bindings: binds,
+			Body:     tr,
+		}, free
+	case LetRec:
+		binds := make([]Binding, 0)
+
+		for _, b := range v.Bindings {
+			boundLocal[b.Identifier] = true
+		}
+		for _, b := range v.Bindings {
+			tr, fr := LiftLambdasRec(b.Value, boundLocal, labels)
+
+			for k := range fr {
+				if _, ok := boundLocal[k]; !ok {
+					free[k] = true
+				}
+			}
+
+			binds = append(binds, Binding{b.Identifier, tr})
+		}
+
+		tr, fr := LiftLambdasRec(v.Body, boundLocal, labels)
+
+		for k := range fr {
+			if _, ok := boundLocal[k]; !ok {
+				free[k] = true
+			}
+		}
+
+		return LetRec{
 			Bindings: binds,
 			Body:     tr,
 		}, free
@@ -828,6 +920,157 @@ func LiftLambdas(program Node) (Node, error) {
 	return Labels{LabelList: labels, Expression: tr}, nil
 }
 
+func TailCallOptimize(n Node, isTail bool) (Node, error) {
+	switch v := n.(type) {
+	case Labels:
+		exp, err := TailCallOptimize(v.Expression, true)
+
+		if err != nil {
+			return nil, err
+		}
+
+		labels := make([]Label, 0)
+
+		for _, l := range v.LabelList {
+			nl, err := TailCallOptimize(l.Code, true)
+
+			if err != nil {
+				return nil, err
+			}
+
+			labels = append(labels, Label{l.Identifier, nl.(Code)})
+		}
+
+		return Labels{LabelList: labels, Expression: exp}, nil
+	case SExp:
+		_, isClosure := v.Children[0].(Closure)
+		id, isIdent := v.Children[0].(Identifier)
+
+		_, builtin := BUILTINS[id.Name]
+
+		if builtin {
+			isIdent = false
+		}
+
+		ch := make([]Node, 0)
+
+		for _, c := range v.Children {
+			tc, err := TailCallOptimize(c, false)
+
+			if err != nil {
+				return nil, err
+			}
+
+			ch = append(ch, tc)
+		}
+
+		if (isClosure || isIdent) && isTail {
+			ch = append([]Node{Identifier{"tailcall"}}, ch...)
+		}
+
+		return SExp{ch}, nil
+
+	case Let:
+		body, err := TailCallOptimize(v.Body, isTail)
+
+		if err != nil {
+			return nil, err
+		}
+
+		bindings := make([]Binding, 0)
+
+		for _, b := range v.Bindings {
+			nv, err := TailCallOptimize(b.Value, false) // could it be true?
+
+			if err != nil {
+				return nil, err
+			}
+
+			bindings = append(bindings, Binding{b.Identifier, nv})
+		}
+
+		return Let{
+			Bindings: bindings,
+			Body:     body,
+		}, nil
+	case LetRec:
+		body, err := TailCallOptimize(v.Body, isTail)
+
+		if err != nil {
+			return nil, err
+		}
+
+		bindings := make([]Binding, 0)
+
+		for _, b := range v.Bindings {
+			nv, err := TailCallOptimize(b.Value, false) // could it be true?
+
+			if err != nil {
+				return nil, err
+			}
+
+			bindings = append(bindings, Binding{b.Identifier, nv})
+		}
+
+		return LetRec{
+			Bindings: bindings,
+			Body:     body,
+		}, nil
+	case If:
+		cond, err := TailCallOptimize(v.Condition, false)
+
+		if err != nil {
+			return nil, err
+		}
+
+		cons, err := TailCallOptimize(v.Consequent, isTail)
+
+		if err != nil {
+			return nil, err
+		}
+
+		alt, err := TailCallOptimize(v.Alternative, isTail)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return If{
+			Condition:   cond,
+			Consequent:  cons,
+			Alternative: alt,
+		}, nil
+	case Begin:
+		ch := make([]Node, 0)
+
+		for i, c := range v.Children {
+			nc, err := TailCallOptimize(c, (i == len(v.Children)-1 && isTail))
+
+			if err != nil {
+				return nil, err
+			}
+
+			ch = append(ch, nc)
+		}
+
+		return Begin{ch}, nil
+	case Code:
+		exp, err := TailCallOptimize(v.Expression, isTail)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return Code{
+			Vars:       v.Vars,
+			FreeVars:   v.FreeVars,
+			Expression: exp,
+		}, nil
+	}
+
+	return n, nil
+}
+
 func (c *Compiler) Emit(w Word) {
 	c.Code = append(c.Code, w)
 }
@@ -890,15 +1133,20 @@ func main() {
 	check(err)
 
 	liftedProgram, err := LiftLambdas(program)
-	// panic(fmt.Errorf("%+v", liftedProgram))
 
 	check(err)
+
+	tailCalled, err := TailCallOptimize(liftedProgram, true)
+
+	check(err)
+
+	// panic(fmt.Errorf("%+v %+v\n", liftedProgram, tailCalled))
 
 	c := Compiler{}
 
 	env := make(Environment)
 
-	err = c.CompileFunction(liftedProgram, &env)
+	err = c.CompileFunction(tailCalled, &env)
 
 	check(err)
 

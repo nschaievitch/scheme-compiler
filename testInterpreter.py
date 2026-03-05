@@ -221,7 +221,30 @@ testSuites = {
            ("(let ((b 2)) (let ((a (lambda (y) (cons (let ((z 11)) (lambda () (+ y z))) (lambda (a) (- a b)))))) ((car (a 50)))))", 61),
            ("(let ((b 2)) (let ((a (lambda (y) (cons (let ((z 11)) (lambda () (+ y z))) (lambda (a) (- a b)))))) ((cdr (a 50)) 10)))", 8),
 
-        ]
+        ],
+    "letrec":
+    [
+        ("(letrec ((fact (lambda (x) (if (= x 0) 1 (* x (fact (- x 1))))))) (fact 5))", 120),
+        ("(letrec ((even? (lambda (n) (if (= n 0) #t (odd? (- n 1))))) (odd? (lambda (n) (if (= n 0) #f (even? (- n 1)))))) (even? 4))", "#t"),
+        ("(letrec ((even? (lambda (n) (if (= n 0) #t (odd? (- n 1))))) (odd? (lambda (n) (if (= n 0) #f (even? (- n 1)))))) (odd? 7))", "#t"),
+        ("(letrec ((even? (lambda (n) (if (= n 0) #t (odd? (- n 1))))) (odd? (lambda (n) (if (= n 0) #f (even? (- n 1)))))) (even? 5))", "#f"),
+        ("(letrec ((even? (lambda (n) (if (= n 0) #t (odd? (- n 1))))) (odd? (lambda (n) (if (= n 0) #f (even? (- n 1)))))) (odd? 6))", "#f"),
+    ],
+    "tailcall":
+    [
+        ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (funcall tri (- n 1) (+ acc n)))))) (tri 1000 0))", ERROR),
+        ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (tailcall tri (- n 1) (+ acc n)))))) (tri 1000 0))", 500500),
+        (
+            "(letrec ((even-sum (lambda (n acc) (if (= n 0) acc (odd-sum (- n 1) (+ acc n))))) (odd-sum (lambda (n acc) (if (= n 0) acc (even-sum (- n 1) (+ acc n)))))) (even-sum 1000 0))",
+            500500,
+        ),
+        (
+            "(letrec ((even-sum (lambda (n acc) (if (= n 0) acc (tailcall odd-sum (- n 1) (+ acc n))))) (odd-sum (lambda (n acc) (if (= n 0) acc (tailcall even-sum (- n 1) (+ acc n)))))) (even-sum 1000 0))",
+            500500,
+        ),
+        ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (tailcall tri (- n 1) (+ acc n)))))) (tri 4 0))", 10),
+        ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (tri (- n 1) (+ acc n)))))) (tri 4 0))", 10),
+    ]
 }
 
 passed = 0

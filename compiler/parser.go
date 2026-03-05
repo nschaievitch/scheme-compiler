@@ -68,6 +68,7 @@ func (p *Parser) ParseSExp() ([]Node, error) {
 		}
 
 		children = append(children, node)
+		p.SkipWhitespace()
 	}
 
 	if p.Peek() == 0 {
@@ -157,6 +158,7 @@ func (p *Parser) Parse() (Node, error) {
 		}
 
 		let_id := Identifier{"let"}
+		letrec_id := Identifier{"letrec"}
 		if_id := Identifier{"if"}
 		vector_id := Identifier{"vector"}
 		string_id := Identifier{"string"}
@@ -168,9 +170,9 @@ func (p *Parser) Parse() (Node, error) {
 
 		// test if SExp is another binding
 
-		if len(children) > 0 && children[0] == let_id {
+		if len(children) > 0 && (children[0] == let_id || children[0] == letrec_id) {
 			if len(children) != 3 {
-				return nil, fmt.Errorf("Invalid let form, must have three children %s", p.Source[p.Pos:])
+				return nil, fmt.Errorf("Invalid let form, must have three children %+v, %d", children, len(children))
 			}
 
 			bindings := []Binding{}
@@ -202,7 +204,11 @@ func (p *Parser) Parse() (Node, error) {
 				}
 			}
 
-			return Let{bindings, children[len(children)-1]}, nil
+			if children[0] == let_id {
+				return Let{bindings, children[len(children)-1]}, nil
+			} else {
+				return LetRec{bindings, children[len(children)-1]}, nil
+			}
 		}
 
 		if len(children) == 4 && children[0] == if_id {

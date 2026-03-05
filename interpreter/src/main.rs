@@ -49,6 +49,8 @@ pub enum Op {
     LOAD_CLOSURE_VAR,
     SLIDE,
     TAILCALL,
+    LOAD_VAR_DEFER,
+    SET_DEFERRED,
 }
 
 const HEAP_SIZE: usize = 1 << 10;
@@ -72,6 +74,7 @@ const PAIR_TAG: u64 = 0b001;
 const VECTOR_TAG: u64 = 0b010;
 const STRING_TAG: u64 = 0b011;
 const CLOSURE_TAG: u64 = 0b110;
+const FORMAL_TAG: u64 = 0b101;
 
 fn read_op(opcode: u64) -> Result<Op> {
     if opcode == 0 {
@@ -96,6 +99,7 @@ define_tag_checker!(check_boxed_pair_pointer, POINTER_MASK, PAIR_TAG);
 define_tag_checker!(check_boxed_vector_pointer, POINTER_MASK, VECTOR_TAG);
 define_tag_checker!(check_boxed_string_pointer, POINTER_MASK, STRING_TAG);
 define_tag_checker!(check_boxed_closure_pointer, POINTER_MASK, CLOSURE_TAG);
+define_tag_checker!(check_boxed_formal, POINTER_MASK, FORMAL_TAG);
 
 fn read_boxed_number(boxed_num: u64) -> Result<u64> {
     Ok(boxed_num >> FIXNUM_SHIFT)
@@ -157,6 +161,11 @@ fn box_string(string_pointer: usize) -> u64 {
 fn box_closure(closure_pointer: usize) -> u64 {
     let u: u64 = closure_pointer.try_into().unwrap();
     (u << POINTER_SHIFT) | CLOSURE_TAG
+}
+
+fn box_formal(formal_offset: usize) -> u64 {
+    let u: u64 = formal_offset.try_into().unwrap();
+    (u << POINTER_SHIFT) | FORMAL_TAG
 }
 
 fn print_boxed(boxed: u64, heap: &[u64]) -> Result<String> {
@@ -256,6 +265,8 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
     let mut heap_pointer: usize = 0;
     let mut stack_base_pointer: usize = 0;
 
+    let mut current_closure: usize = 0;
+
     // first word should point to main function
     let main_pos: usize = readword(&code, &mut pc)?.try_into()?;
     pc = main_pos;
@@ -264,7 +275,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
         let instr = read_op(readword(&code, &mut pc)?)?;
         dbg!(&instr, &pc, &code[pc - 1]);
 
-        debug_assert!(stack.len() <= DEBUG_MAX_STACK_SIZE, "x must be positive");
+        debug_assert!(stack.len() <= DEBUG_MAX_STACK_SIZE, "stack overflow");
 
         match instr {
             Op::LOAD64 => {
@@ -295,7 +306,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
             }
 
             Op::RETURN => {
-                // dbg!(&control_stack);
+                dbg!(&control_stack);
 
                 if control_stack.len() > 0
                     && check_boxed_closure_pointer(
@@ -323,6 +334,14 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                     .pop()
                     .ok_or(eyre!("Tried to pop bp from empty control stack"))?;
 
+                if control_stack.len() > 0
+                    && check_boxed_closure_pointer(
+                        control_stack.last().unwrap().clone().try_into()?,
+                    )
+                {
+                    current_closure = read_boxed_pointer(control_stack.last().unwrap().clone().try_into()?)?;
+                }
+                
                 stack.truncate(stack_base_pointer);
 
                 pc = new_pc;
@@ -1061,9 +1080,15 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 }
 
                 for i in 1..=args_len {
-                    heap[heap_pointer + i] = stack
+                    let val = stack
                         .pop()
                         .ok_or(eyre!("Error popping from stack to create closure"))?;
+
+                    if check_boxed_formal(val) {
+                        control_stack.push(heap_pointer + i);
+                    }
+
+                    heap[heap_pointer + i] = val;
                 }
 
                 stack.push(box_closure(heap_pointer));
@@ -1086,32 +1111,23 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 }
 
                 control_stack.push(boxed_closure_pointer.try_into()?);
+                current_closure = read_boxed_pointer(boxed_closure_pointer)?;
 
-                let closure_pointer = read_boxed_pointer(boxed_closure_pointer)?;
-
-                let label_add: usize = heap[closure_pointer].try_into()?;
+                let label_add: usize = heap[current_closure].try_into()?;
                 let jump_pos: usize = code[label_add].try_into()?;
 
-                dbg!(&stack, &jump_pos, &label_add, &code);
+                dbg!(&stack, &jump_pos, &label_add);
                 pc = jump_pos;
             }
 
             Op::LOAD_CLOSURE_VAR => {
-                let closure_pointer = read_boxed_pointer(
-                    control_stack
-                        .last()
-                        .ok_or(eyre!(
-                            "Tried to load closure variable with empty control stack"
-                        ))?
-                        .clone()
-                        .try_into()?,
-                )?;
+                let closure_pointer = current_closure;
 
                 let var_index: usize = readword(&code, &mut pc)?.try_into()?;
 
                 let val = heap[closure_pointer + var_index + 1];
 
-                stack.push(val.clone())
+                stack.push(val)
             }
 
             Op::SLIDE => {
@@ -1124,7 +1140,57 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 stack.push(val);
             }
 
-            Op::TAILCALL => {}
+            Op::TAILCALL => {
+                // Discard the 2 values SETUP_STACK_BASE pushed onto control_stack
+                control_stack.pop();
+                control_stack.pop();
+
+                let n_args: usize = readword(&code, &mut pc)?.try_into()?;
+                let start = stack.len() - (n_args + 1);
+
+                stack.copy_within(start.., stack_base_pointer);
+
+                stack.truncate(stack_base_pointer + n_args + 1);
+
+                let boxed_closure_pointer = stack
+                    .pop()
+                    .ok_or(eyre!("Tried to funcall with no closure on stack"))?;
+
+                if !check_boxed_closure_pointer(boxed_closure_pointer) {
+                    dbg!(&stack);
+                    return Err(eyre!("Invalid closure pointer {}", boxed_closure_pointer));
+                }
+
+                current_closure = read_boxed_pointer(boxed_closure_pointer)?;
+
+                let label_add: usize = heap[current_closure].try_into()?;
+                let jump_pos: usize = code[label_add].try_into()?;
+
+                dbg!(&stack, &jump_pos, &label_add);
+                pc = jump_pos;
+            }
+
+            Op::LOAD_VAR_DEFER => {
+                let var_offset: usize = readword(&code, &mut pc)?.try_into()?;
+                let boxed = box_formal(var_offset);
+                stack.push(boxed);
+            }
+
+            Op::SET_DEFERRED => {
+                let n = readword(&code, &mut pc)?;
+
+                dbg!(&n, &control_stack, &heap[..10]);
+                for _i in 0..n {
+                    let idx = control_stack
+                        .pop()
+                        .ok_or(eyre!("Tried to pop from empty control stack"))?;
+                    let offset = read_boxed_pointer(heap[idx])?;
+
+                    heap[idx] = *(stack.get(offset + stack_base_pointer)
+                    .ok_or(eyre!("Invalid variable load from bad position, tried to grab position {} from stack of length {}", idx + stack_base_pointer, stack.len()))?);
+                }
+                dbg!(&heap[..10]);
+            }
         }
     }
 }

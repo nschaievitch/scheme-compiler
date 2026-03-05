@@ -1,1 +1,1 @@
-(let ((adder (lambda (x) (if (= x 0) 0 (+ x 10))))) (adder 6))
+(letrec ((adder (lambda (x) (if (= x 0) 0 (+ (adder (sub1 x)) x))))) (adder 300))
