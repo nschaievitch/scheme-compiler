@@ -244,6 +244,7 @@ testSuites = {
         ),
         ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (tailcall tri (- n 1) (+ acc n)))))) (tri 4 0))", 10),
         ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (tri (- n 1) (+ acc n)))))) (tri 4 0))", 10),
+        ("(letrec ((countdown (lambda (n) (if (= n 0) 0 (countdown (- n 1)))))) (countdown 10000))", 0)
     ]
 }
 

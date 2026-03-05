@@ -352,6 +352,7 @@ type Let struct {
 func (l Let) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	code := []Word{}
 	// Evaluate bindings and save stack positions
+	localEnv := make(Environment)
 	for _, b := range l.Bindings {
 		val, err := b.Value.Compile(env, stackIndex)
 
@@ -361,10 +362,18 @@ func (l Let) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 
 		code = append(code, val...)
 
-		(*env)[b.Identifier] = VariableResolution{*stackIndex - 1, false, false}
+		localEnv[b.Identifier] = VariableResolution{*stackIndex - 1, false, false}
 	}
 
-	body, err := l.Body.Compile(env, stackIndex)
+	for k, v := range *env {
+		_, ok := localEnv[k]
+
+		if !ok {
+			localEnv[k] = v
+		}
+	}
+
+	body, err := l.Body.Compile(&localEnv, stackIndex)
 
 	if err != nil {
 		return []Word{}, err
