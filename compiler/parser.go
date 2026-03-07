@@ -157,6 +157,10 @@ func (p *Parser) Parse() (Node, error) {
 			return nil, err
 		}
 
+		if len(children) == 0 {
+			return Identifier{"()"}, nil
+		}
+
 		let_id := Identifier{"let"}
 		letrec_id := Identifier{"letrec"}
 		if_id := Identifier{"if"}
