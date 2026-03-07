@@ -55,6 +55,7 @@ const (
 	TAILCALL
 	LOAD_VAR_DEFER
 	SET_DEFERRED
+	PUSH_NIL
 )
 
 const FIXNUM_MASK = 0b11
@@ -317,6 +318,9 @@ func (i Identifier) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	case "string-append":
 		*stackIndex -= 1
 		return []Word{STRING_APPEND}, nil
+	case "'()":
+		*stackIndex += 1
+		return []Word{PUSH_NIL}, nil
 	default:
 		varRes, ok := (*env)[i]
 

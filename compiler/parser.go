@@ -127,6 +127,23 @@ func (p *Parser) Parse() (Node, error) {
 	case '"':
 		characters, e := p.ParseString()
 		return String{characters}, e
+	case '\'': //TODO: add quote forms
+		p.Pos += 1
+
+		if p.Peek() != '(' {
+			return nil, fmt.Errorf("Unexpected character after ': %c\n", p.Peek())
+		}
+
+		p.Pos += 1
+
+		if p.Peek() != ')' {
+			return nil, fmt.Errorf("Not implemented: only nil quote forms are currently supported")
+		}
+
+		p.Pos += 1
+
+		return Identifier{"'()"}, nil
+
 	case '#':
 		p.Pos += 1
 		switch p.Peek() {
