@@ -51,6 +51,7 @@ pub enum Op {
     TAILCALL,
     LOAD_VAR_DEFER,
     SET_DEFERRED,
+    PUSH_NIL,
 }
 
 const HEAP_SIZE: usize = 1 << 10;
@@ -339,9 +340,10 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                         control_stack.last().unwrap().clone().try_into()?,
                     )
                 {
-                    current_closure = read_boxed_pointer(control_stack.last().unwrap().clone().try_into()?)?;
+                    current_closure =
+                        read_boxed_pointer(control_stack.last().unwrap().clone().try_into()?)?;
                 }
-                
+
                 stack.truncate(stack_base_pointer);
 
                 pc = new_pc;
