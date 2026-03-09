@@ -77,6 +77,8 @@ const STRING_TAG: u64 = 0b011;
 const CLOSURE_TAG: u64 = 0b110;
 const FORMAL_TAG: u64 = 0b101;
 
+const NIL_VAL: u64 = 0b111; 
+
 fn read_op(opcode: u64) -> Result<Op> {
     if opcode == 0 {
         return Err(eyre!("Invalid opcode 0"));
@@ -245,6 +247,10 @@ fn print_boxed(boxed: u64, heap: &[u64]) -> Result<String> {
         return Ok(format!("<closure over label {}>", p));
     }
 
+    if boxed == NIL_VAL {
+        return Ok("'()".to_owned());
+    }
+
     Err(eyre!("Invalid tagged value {}", boxed))
 }
 
@@ -331,18 +337,17 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                     .pop()
                     .ok_or(eyre!("Tried to pop pc from empty control stack"))?;
 
+                let caller_closure_boxed: usize = control_stack
+                    .pop()
+                    .ok_or(eyre!("Tried to pop caller closure from empty control stack"))?;
+
+                if check_boxed_closure_pointer(caller_closure_boxed.try_into()?) {
+                    current_closure = read_boxed_pointer(caller_closure_boxed.try_into()?)?;
+                }
+
                 let new_bp: usize = control_stack
                     .pop()
                     .ok_or(eyre!("Tried to pop bp from empty control stack"))?;
-
-                if control_stack.len() > 0
-                    && check_boxed_closure_pointer(
-                        control_stack.last().unwrap().clone().try_into()?,
-                    )
-                {
-                    current_closure =
-                        read_boxed_pointer(control_stack.last().unwrap().clone().try_into()?)?;
-                }
 
                 stack.truncate(stack_base_pointer);
 
@@ -415,7 +420,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                     .pop()
                     .ok_or(eyre!("Unexpected call to null? without arguments"))?;
 
-                if val == 0 {
+                if val == NIL_VAL {
                     stack.push(box_boolean(true));
                 } else {
                     stack.push(box_boolean(false));
@@ -905,6 +910,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 }
 
                 let pointer = read_boxed_pointer(string_pointer)?;
+                dbg!(&pointer);
                 let string_len = heap[pointer];
 
                 let string_position = read_boxed_number(string_position_boxed)?;
@@ -963,6 +969,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
                 let new_char = read_boxed_character(new_char_boxed)?;
 
+                dbg!(&heap[..4], &string_position, &new_char, &pointer);
                 if string_position >= string_len {
                     return Err(eyre!(
                         "Attempted to read out of string bounds: position {string_position} in string of length {string_len}"
@@ -972,15 +979,16 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 let string_position_u: usize = string_position.try_into()?;
                 let pos_word: usize = string_position_u / 8;
 
-                let word = heap[pos_word + 1];
+                let word = heap[pointer + pos_word + 1];
 
                 let mut word_bytes = word.to_le_bytes();
 
                 word_bytes[string_position_u % 8] = new_char;
 
-                heap[pos_word + 1] = u64::from_le_bytes(word_bytes);
+                heap[pointer + pos_word + 1] = u64::from_le_bytes(word_bytes);
 
                 stack.push(string_pointer);
+                dbg!(&heap[..4]);
             }
 
             Op::STRING_APPEND => {
@@ -1060,6 +1068,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 stack_base_pointer = control_stack
                     .pop()
                     .ok_or(eyre!("labelcall with empty control stack"))?;
+                control_stack.push(0); // no caller closure to restore
                 control_stack.push(pc + 1);
 
                 let label_add: usize = readword(&code, &mut pc)?.try_into()?;
@@ -1101,6 +1110,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 stack_base_pointer = control_stack
                     .pop()
                     .ok_or(eyre!("funcall with empty control stack"))?;
+                control_stack.push(box_closure(current_closure).try_into()?);
                 control_stack.push(pc);
 
                 let boxed_closure_pointer = stack
@@ -1192,6 +1202,10 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                     .ok_or(eyre!("Invalid variable load from bad position, tried to grab position {} from stack of length {}", idx + stack_base_pointer, stack.len()))?);
                 }
                 dbg!(&heap[..10]);
+            }
+
+            Op::PUSH_NIL => {
+                stack.push(NIL_VAL);
             }
         }
     }

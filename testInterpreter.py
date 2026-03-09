@@ -245,6 +245,13 @@ testSuites = {
         ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (tailcall tri (- n 1) (+ acc n)))))) (tri 4 0))", 10),
         ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (tri (- n 1) (+ acc n)))))) (tri 4 0))", 10),
         ("(letrec ((countdown (lambda (n) (if (= n 0) 0 (countdown (- n 1)))))) (countdown 10000))", 0)
+    ],
+    "stdlib": [
+        ("(map (lambda (x) (* 2 x)) (cons 1 (cons 2 (cons 3 '()))))", "(2 . (4 . (6 . '())))"),
+        ("(foldl + 0 (cons 1 (cons 2 (cons 3 (cons 4 '())))))", 10),
+        ("(foldl cons '() (cons 1 (cons 2 (cons 3 (cons 4 '())))))", "(4 . (3 . (2 . (1 . '()))))"), 
+        ("(foldr + 0 (cons 1 (cons 2 (cons 3 (cons 4 '())))))", 10),
+        ("(foldr cons '() (cons 1 (cons 2 (cons 3 (cons 4 '())))))", "(1 . (2 . (3 . (4 . '()))))"), 
     ]
 }
 

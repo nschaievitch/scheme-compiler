@@ -1,0 +1,1 @@
+(string-ref (string-set! "hola" 3 #\i) 3)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -69,6 +70,9 @@ const CHAR_SHIFT = 8
 const BOOLEAN_MASK = 0b1111111
 const BOOLEAN_TAG = 0b0011111
 const BOOLEAN_SHIFT = 7
+
+//go:embed stdlib.scm
+var STDLIB_SCM string
 
 type VariableResolution struct {
 	Offset         int
@@ -410,6 +414,19 @@ func (l LetRec) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 		*stackIndex += 1
 	}
 
+	deferredCount := 0
+	for _, b := range l.Bindings {
+		if closure, ok := b.Value.(Closure); ok {
+			for _, v := range closure.Values {
+				if id, ok := v.(Identifier); ok {
+					if res, ok := (*env)[id]; ok && res.IsDeferredLoad {
+						deferredCount++
+					}
+				}
+			}
+		}
+	}
+
 	for _, b := range l.Bindings {
 		val, err := b.Value.Compile(env, stackIndex)
 
@@ -420,7 +437,7 @@ func (l LetRec) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 		code = append(code, val...)
 	}
 
-	code = append(code, SET_DEFERRED, Word(len(l.Bindings)))
+	code = append(code, SET_DEFERRED, Word(deferredCount))
 
 	for _, b := range l.Bindings {
 		v := (*env)[b.Identifier]
@@ -693,33 +710,109 @@ func (l Lambda) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	panic("Attempted to compile lambda without lifting")
 }
 
-var BUILTINS = map[string]bool{
-	"add1":          true,
-	"sub1":          true,
-	"integer->char": true,
-	"char->integer": true,
-	"null?":         true,
-	"zero?":         true,
-	"not":           true,
-	"integer?":      true,
-	"boolean?":      true,
-	"+":             true,
-	"*":             true,
-	"-":             true,
-	"<":             true,
-	"=":             true,
-	"cons":          true,
-	"car":           true,
-	"cdr":           true,
-	"vector-ref":    true,
-	"vector-set!":   true,
-	"vector-append": true,
-	"string-ref":    true,
-	"string-set!":   true,
-	"string-append": true,
-	"funcall":       true,
-	"tailcall":      true,
-	"labelcall":     true,
+// i found eta expansion to be the correct name for this, but not 100% sure
+func etaExpandIdent(name string) Node {
+	arity := BUILTINS[name]
+	args := make([]Identifier, arity)
+	argNodes := make([]Node, arity+1)
+	argNodes[0] = Identifier{name}
+	for i := 0; i < arity; i++ {
+		id := Identifier{fmt.Sprintf("__eta%d", i)}
+		args[i] = id
+		argNodes[i+1] = id
+	}
+	return Lambda{Args: args, Code: SExp{Children: argNodes}}
+}
+
+func EtaExpandBuiltins(n Node) Node {
+	switch v := n.(type) {
+	case SExp:
+		children := make([]Node, len(v.Children))
+		children[0] = v.Children[0]
+
+		for i := 1; i < len(v.Children); i++ {
+			child := EtaExpandBuiltins(v.Children[i])
+
+			if id, ok := child.(Identifier); ok {
+				if _, isBlt := BUILTINS[id.Name]; isBlt && id.Name != "funcall" && id.Name != "tailcall" && id.Name != "labelcall" && id.Name != "'()" {
+					child = etaExpandIdent(id.Name)
+				}
+			}
+
+			children[i] = child
+		}
+		return SExp{Children: children}
+	case Let:
+		binds := make([]Binding, len(v.Bindings))
+
+		for i, b := range v.Bindings {
+			binds[i] = Binding{b.Identifier, EtaExpandBuiltins(b.Value)}
+		}
+
+		return Let{Bindings: binds, Body: EtaExpandBuiltins(v.Body)}
+	case LetRec:
+		binds := make([]Binding, len(v.Bindings))
+
+		for i, b := range v.Bindings {
+			binds[i] = Binding{b.Identifier, EtaExpandBuiltins(b.Value)}
+		}
+
+		return LetRec{Bindings: binds, Body: EtaExpandBuiltins(v.Body)}
+	case If:
+		return If{
+			Condition:   EtaExpandBuiltins(v.Condition),
+			Consequent:  EtaExpandBuiltins(v.Consequent),
+			Alternative: EtaExpandBuiltins(v.Alternative),
+		}
+	case Lambda:
+		return Lambda{Args: v.Args, Code: EtaExpandBuiltins(v.Code)}
+	case Begin:
+		children := make([]Node, len(v.Children))
+
+		for i, e := range v.Children {
+			children[i] = EtaExpandBuiltins(e)
+		}
+		return Begin{Children: children}
+	case Vector:
+		children := make([]Node, len(v.Children))
+
+		for i, e := range v.Children {
+			children[i] = EtaExpandBuiltins(e)
+		}
+		return Vector{Children: children}
+	default:
+		return n
+	}
+}
+
+var BUILTINS = map[string]int{
+	"add1":          1,
+	"sub1":          1,
+	"integer->char": 1,
+	"char->integer": 1,
+	"null?":         1,
+	"zero?":         1,
+	"not":           1,
+	"integer?":      1,
+	"boolean?":      1,
+	"+":             2,
+	"*":             2,
+	"-":             2,
+	"<":             2,
+	"=":             2,
+	"cons":          2,
+	"car":           1,
+	"cdr":           1,
+	"vector-ref":    2,
+	"vector-set!":   3,
+	"vector-append": 2,
+	"string-ref":    2,
+	"string-set!":   3,
+	"string-append": 2,
+	"funcall":       1,
+	"tailcall":      1,
+	"labelcall":     1,
+	"'()":           0,
 }
 
 func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transformed Node, free map[Identifier]bool) {
@@ -1084,6 +1177,29 @@ func TailCallOptimize(n Node, isTail bool) (Node, error) {
 	return n, nil
 }
 
+func AddStdlib(program Node) (Node, error) {
+	// for testing only, we don't add stdlib if topform is labels
+	if _, ok := program.(Labels); ok {
+		return program, nil
+	}
+
+	stdlib, err := SchemeParse(STDLIB_SCM)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing stdlib: %e\n", err)
+	}
+
+	stdlib_letrec, ok := stdlib.(LetRec)
+
+	if !ok {
+		return nil, fmt.Errorf("Stdlib is not letrec\n")
+	}
+
+	return LetRec{append([]Binding{{Identifier{
+		"main",
+	}, Lambda{[]Identifier{}, program}}}, stdlib_letrec.Bindings...), stdlib_letrec.Body}, nil
+}
+
 func (c *Compiler) Emit(w Word) {
 	c.Code = append(c.Code, w)
 }
@@ -1145,7 +1261,13 @@ func main() {
 
 	check(err)
 
-	liftedProgram, err := LiftLambdas(program)
+	linkedProgram, err := AddStdlib(program)
+
+	check(err)
+
+	expandedProgram := EtaExpandBuiltins(linkedProgram)
+
+	liftedProgram, err := LiftLambdas(expandedProgram)
 
 	check(err)
 
