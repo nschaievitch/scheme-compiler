@@ -1,94 +1,94 @@
-[31mError interpreting (labels (
-    (f0 (code (x y) (- x y)))
-    (f1 (code (x y) (+ (labelcall f0 x 1) y)))) 
-(labelcall f1 10 100))
-: [src/main.rs:277:9] &instr = SETUP_STACK_BASE
-[src/main.rs:277:9] &pc = 21
-[src/main.rs:277:9] &code[pc - 1] = 33
-[src/main.rs:277:9] &instr = LOAD64
-[src/main.rs:277:9] &pc = 22
-[src/main.rs:277:9] &code[pc - 1] = 1
-[src/main.rs:277:9] &instr = LOAD64
-[src/main.rs:277:9] &pc = 24
-[src/main.rs:277:9] &code[pc - 1] = 1
-[src/main.rs:277:9] &instr = LABELCALL
-[src/main.rs:277:9] &pc = 26
-[src/main.rs:277:9] &code[pc - 1] = 34
-[src/main.rs:277:9] &instr = LOAD_VAR
-[src/main.rs:277:9] &pc = 10
-[src/main.rs:277:9] &code[pc - 1] = 19
-[src/main.rs:626:17] &stack = [
-    400,
-    40,
-]
-[src/main.rs:626:17] &stack_index = 0
-[src/main.rs:277:9] &instr = SETUP_STACK_BASE
-[src/main.rs:277:9] &pc = 12
-[src/main.rs:277:9] &code[pc - 1] = 33
-[src/main.rs:277:9] &instr = LOAD64
-[src/main.rs:277:9] &pc = 13
-[src/main.rs:277:9] &code[pc - 1] = 1
-[src/main.rs:277:9] &instr = LOAD_VAR
-[src/main.rs:277:9] &pc = 15
-[src/main.rs:277:9] &code[pc - 1] = 19
-[src/main.rs:626:17] &stack = [
-    400,
-    40,
-    400,
+[31mError interpreting (let ((a (quote (cons 1 2))) (b (quote (cons 1 2)))) (eq? a b)): [src/main.rs:287:9] &instr = LOAD64
+[src/main.rs:287:9] &pc = 102
+[src/main.rs:287:9] &code[pc - 1] = 1
+[src/main.rs:287:9] &instr = LOAD64
+[src/main.rs:287:9] &pc = 104
+[src/main.rs:287:9] &code[pc - 1] = 1
+[src/main.rs:287:9] &instr = CONS
+[src/main.rs:287:9] &pc = 106
+[src/main.rs:287:9] &code[pc - 1] = 22
+[src/main.rs:672:17] &stack = [
+    8,
     4,
 ]
-[src/main.rs:626:17] &stack_index = 1
-[src/main.rs:277:9] &instr = LABELCALL
-[src/main.rs:277:9] &pc = 17
-[src/main.rs:277:9] &code[pc - 1] = 34
-[src/main.rs:277:9] &instr = LOAD_VAR
-[src/main.rs:277:9] &pc = 4
-[src/main.rs:277:9] &code[pc - 1] = 19
-[src/main.rs:626:17] &stack = [
-    400,
-    40,
-    400,
+[src/main.rs:287:9] &instr = CONSTANT_INIT
+[src/main.rs:287:9] &pc = 107
+[src/main.rs:287:9] &code[pc - 1] = 43
+[src/main.rs:287:9] &instr = CLOSURE
+[src/main.rs:287:9] &pc = 108
+[src/main.rs:287:9] &code[pc - 1] = 35
+[src/main.rs:287:9] &instr = LOAD_VAR_DEFER
+[src/main.rs:287:9] &pc = 111
+[src/main.rs:287:9] &code[pc - 1] = 40
+[src/main.rs:287:9] &instr = CLOSURE
+[src/main.rs:287:9] &pc = 113
+[src/main.rs:287:9] &code[pc - 1] = 35
+[src/main.rs:287:9] &instr = LOAD_VAR_DEFER
+[src/main.rs:287:9] &pc = 116
+[src/main.rs:287:9] &code[pc - 1] = 40
+[src/main.rs:287:9] &instr = CLOSURE
+[src/main.rs:287:9] &pc = 118
+[src/main.rs:287:9] &code[pc - 1] = 35
+[src/main.rs:287:9] &instr = LOAD_VAR_DEFER
+[src/main.rs:287:9] &pc = 121
+[src/main.rs:287:9] &code[pc - 1] = 40
+[src/main.rs:287:9] &instr = CLOSURE
+[src/main.rs:287:9] &pc = 123
+[src/main.rs:287:9] &code[pc - 1] = 35
+[src/main.rs:287:9] &instr = SET_DEFERRED
+[src/main.rs:287:9] &pc = 126
+[src/main.rs:287:9] &code[pc - 1] = 41
+[src/main.rs:1198:17] &n = 3
+[src/main.rs:1198:17] &control_stack = [
     4,
-    40,
+    6,
+    8,
 ]
-[src/main.rs:626:17] &stack_index = 0
-[src/main.rs:277:9] &instr = LOAD_VAR
-[src/main.rs:277:9] &pc = 6
-[src/main.rs:277:9] &code[pc - 1] = 19
-[src/main.rs:626:17] &stack = [
-    400,
-    40,
-    400,
+[src/main.rs:1198:17] &heap[..10] = [
     4,
-    40,
+    8,
+    1,
+    2,
+    13,
+    3,
+    21,
     4,
-]
-[src/main.rs:626:17] &stack_index = 1
-[src/main.rs:277:9] &instr = MINUS
-[src/main.rs:277:9] &pc = 8
-[src/main.rs:277:9] &code[pc - 1] = 16
-[src/main.rs:277:9] &instr = RETURN
-[src/main.rs:277:9] &pc = 9
-[src/main.rs:277:9] &code[pc - 1] = 4
-[src/main.rs:310:17] &control_stack = [
-    0,
-    27,
-    0,
-    18,
-]
-[src/main.rs:322:17] print_boxed(val.clone(), &heap[..])? = "9"
-[src/main.rs:277:9] &instr = PLUS
-[src/main.rs:277:9] &pc = 19
-[src/main.rs:277:9] &code[pc - 1] = 14
-[src/main.rs:277:9] &instr = RETURN
-[src/main.rs:277:9] &pc = 20
-[src/main.rs:277:9] &code[pc - 1] = 4
-[src/main.rs:310:17] &control_stack = [
+    29,
     0,
 ]
-[src/main.rs:322:17] print_boxed(val.clone(), &heap[..])? = "109"
-Error: Tried to pop caller closure from empty control stack
+[src/main.rs:1208:17] &heap[..10] = [
+    4,
+    8,
+    1,
+    2,
+    30,
+    3,
+    46,
+    4,
+    62,
+    0,
+]
+[src/main.rs:287:9] &instr = SETUP_STACK_BASE
+[src/main.rs:287:9] &pc = 128
+[src/main.rs:287:9] &code[pc - 1] = 33
+[src/main.rs:287:9] &instr = LOAD_VAR
+[src/main.rs:287:9] &pc = 129
+[src/main.rs:287:9] &code[pc - 1] = 19
+[src/main.rs:636:17] &stack = [
+    22,
+    30,
+    46,
+    62,
+]
+[src/main.rs:636:17] &stack_index = 0
+[src/main.rs:287:9] &instr = TAILCALL
+[src/main.rs:287:9] &pc = 131
+[src/main.rs:287:9] &code[pc - 1] = 39
+[src/main.rs:1185:17] &stack = []
+[src/main.rs:1185:17] &jump_pos = 5
+[src/main.rs:1185:17] &label_add = 1
+Error: Invalid opcode 0
 
 Location:
-    src/main.rs:336:28
+    src/main.rs:86:20
 [0m

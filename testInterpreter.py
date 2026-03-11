@@ -252,6 +252,21 @@ testSuites = {
         ("(foldl cons '() (cons 1 (cons 2 (cons 3 (cons 4 '())))))", "(4 . (3 . (2 . (1 . '()))))"), 
         ("(foldr + 0 (cons 1 (cons 2 (cons 3 (cons 4 '())))))", 10),
         ("(foldr cons '() (cons 1 (cons 2 (cons 3 (cons 4 '())))))", "(1 . (2 . (3 . (4 . '()))))"), 
+    ],
+    "quotes": [
+        ("(let ((a (quote (cons 1 2))) (b (quote (cons 1 2)))) (eq? a b))", "#t"),
+        ("(quote (cons 1 2))", "(1 . 2)"),
+        ("(car (quote (cons 10 20)))", 10),
+        ("(cdr (quote (cons 10 20)))", 20),
+        ("(let ((a (quote (vector 1 2 3)))) (vector-ref a 1))", 2),
+        ("(let ((a (quote (cons 1 (cons 2 (cons 3 '())))))) (car (cdr a)))", 2),
+        ("(let ((a (quote (cons 1 2))) (b (quote (cons 3 4)))) (+ (car a) (car b)))", 4),
+        ("(let ((a (quote (vector 1 2 3))) (b (quote (vector 1 2 3)))) (eq? a b))", "#t"),
+        ("(let ((a (quote (cons 1 2))) (b (quote (cons 1 2))) (c (quote (cons 1 2)))) (if (eq? a b) (eq? b c) #f))", "#t"),
+        ("(let ((a (quote (cons 1 2))) (b (quote (cons 3 4)))) (eq? a b))", "#f"),
+        ('(let ((a (quote "hi")) (b (quote "hi"))) (eq? a b))', "#t"),
+        ('(let ((a (quote "hi")) (b (quote "bye"))) (eq? a b))', "#f"),
+        ('(let ((a (quote (cons "ok" 1))) (b (quote (cons "ok" 1)))) (eq? a b))', "#t"),
     ]
 }
 

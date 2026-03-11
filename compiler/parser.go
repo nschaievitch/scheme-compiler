@@ -184,6 +184,7 @@ func (p *Parser) Parse() (Node, error) {
 		code_id := Identifier{"code"}
 		closure_id := Identifier{"closure"}
 		lambda_id := Identifier{"lambda"}
+		quote_id := Identifier{"quote"}
 
 		// test if SExp is another binding
 
@@ -378,6 +379,16 @@ func (p *Parser) Parse() (Node, error) {
 				Code: children[2],
 			}, nil
 
+		}
+
+		if len(children) > 0 && children[0] == quote_id {
+			if len(children) != 2 {
+				return nil, fmt.Errorf("Quote form must have exactly one child")
+			}
+
+			return Quote{
+				Structure: children[1],
+			}, nil
 		}
 
 		return SExp{children}, nil

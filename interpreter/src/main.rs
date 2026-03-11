@@ -52,6 +52,8 @@ pub enum Op {
     LOAD_VAR_DEFER,
     SET_DEFERRED,
     PUSH_NIL,
+    CONSTANT_INIT,
+    CONSTANT_REF,
 }
 
 const HEAP_SIZE: usize = 1 << 10;
@@ -77,7 +79,7 @@ const STRING_TAG: u64 = 0b011;
 const CLOSURE_TAG: u64 = 0b110;
 const FORMAL_TAG: u64 = 0b101;
 
-const NIL_VAL: u64 = 0b111; 
+const NIL_VAL: u64 = 0b111;
 
 fn read_op(opcode: u64) -> Result<Op> {
     if opcode == 0 {
@@ -268,6 +270,8 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
     let mut pc: usize = 0;
     let mut stack: Vec<u64> = Vec::new();
     let mut control_stack: Vec<usize> = Vec::new();
+    let mut constants: Vec<u64> = Vec::new(); // stores boxed pointers to quote constants
+
     // let mut heap: Box<[u64; HEAP_SIZE]> = Box::new([0; HEAP_SIZE]);
     let mut heap_pointer: usize = 0;
     let mut stack_base_pointer: usize = 0;
@@ -337,9 +341,9 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                     .pop()
                     .ok_or(eyre!("Tried to pop pc from empty control stack"))?;
 
-                let caller_closure_boxed: usize = control_stack
-                    .pop()
-                    .ok_or(eyre!("Tried to pop caller closure from empty control stack"))?;
+                let caller_closure_boxed: usize = control_stack.pop().ok_or(eyre!(
+                    "Tried to pop caller closure from empty control stack"
+                ))?;
 
                 if check_boxed_closure_pointer(caller_closure_boxed.try_into()?) {
                     current_closure = read_boxed_pointer(caller_closure_boxed.try_into()?)?;
@@ -1206,6 +1210,26 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
             Op::PUSH_NIL => {
                 stack.push(NIL_VAL);
+            }
+
+            Op::CONSTANT_INIT => {
+                let boxed_pointer = stack
+                    .pop()
+                    .ok_or(eyre!("Error popping from stack to init constant"))?;
+
+                constants.push(boxed_pointer);
+            }
+
+            Op::CONSTANT_REF => {
+                let idx: usize = readword(&code, &mut pc)?.try_into()?;
+
+                if idx >= constants.len() {
+                    return Err(eyre!("Tried to reference constant with index bigger than the amount of constants"))
+                }
+
+                let constant = constants[idx];
+
+                stack.push(constant)
             }
         }
     }

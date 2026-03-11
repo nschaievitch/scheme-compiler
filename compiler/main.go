@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 )
 
 type Word uint64
@@ -57,6 +58,8 @@ const (
 	LOAD_VAR_DEFER
 	SET_DEFERRED
 	PUSH_NIL
+	CONSTANT_INIT
+	CONSTANT_REF
 )
 
 const FIXNUM_MASK = 0b11
@@ -294,7 +297,7 @@ func (i Identifier) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	case "<":
 		*stackIndex -= 1
 		return []Word{LESS_THAN}, nil
-	case "=":
+	case "=", "eq?": // very bad! should be different!
 		*stackIndex -= 1
 		return []Word{EQUALP}, nil
 	case "cons":
@@ -625,8 +628,13 @@ type Label struct {
 	Code       Code
 }
 
+type Datum struct {
+	Init Node
+}
+
 type Labels struct {
 	LabelList  []Label
+	Data       []Datum
 	Expression Node
 }
 
@@ -657,6 +665,19 @@ func (l Labels) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	}
 
 	code[0] = Word(len(code))
+
+	for _, datum := range l.Data {
+		words, err := datum.Init.Compile(env, stackIndex)
+
+		if err != nil {
+			return []Word{}, err
+		}
+
+		code = append(code, words...)
+		code = append(code, CONSTANT_INIT)
+
+		*stackIndex -= 1
+	}
 
 	words, err := l.Expression.Compile(env, stackIndex)
 
@@ -708,6 +729,31 @@ type Lambda struct {
 
 func (l Lambda) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	panic("Attempted to compile lambda without lifting")
+}
+
+type Quote struct {
+	Structure Node
+}
+
+func (q Quote) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	panic("Attempted to compile quote without lifting")
+}
+
+type ConstantRef struct {
+	Idx int
+}
+
+func (c ConstantRef) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	*stackIndex += 1
+	return []Word{CONSTANT_REF, Word(c.Idx)}, nil
+}
+
+type ConstantInit struct {
+	Structure Node
+}
+
+func (c ConstantInit) Compile(env *Environment, stackIndex *int) ([]Word, error) {
+	panic("Should not try to call constant-init explicitly")
 }
 
 // i found eta expansion to be the correct name for this, but not 100% sure
@@ -800,6 +846,7 @@ var BUILTINS = map[string]int{
 	"-":             2,
 	"<":             2,
 	"=":             2,
+	"eq?":           2,
 	"cons":          2,
 	"car":           1,
 	"cdr":           1,
@@ -815,7 +862,7 @@ var BUILTINS = map[string]int{
 	"'()":           0,
 }
 
-func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transformed Node, free map[Identifier]bool) {
+func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label, data *[]Datum) (transformed Node, free map[Identifier]bool) {
 	boundLocal := CopyMap(bound)
 	free = make(map[Identifier]bool)
 
@@ -824,7 +871,7 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transfo
 		binds := make([]Binding, 0)
 
 		for _, b := range v.Bindings {
-			tr, fr := LiftLambdasRec(b.Value, boundLocal, labels)
+			tr, fr := LiftLambdasRec(b.Value, boundLocal, labels, data)
 
 			for k := range fr {
 				if _, ok := boundLocal[k]; !ok {
@@ -836,7 +883,7 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transfo
 			boundLocal[b.Identifier] = true
 		}
 
-		tr, fr := LiftLambdasRec(v.Body, boundLocal, labels)
+		tr, fr := LiftLambdasRec(v.Body, boundLocal, labels, data)
 
 		for k := range fr {
 			if _, ok := boundLocal[k]; !ok {
@@ -855,7 +902,7 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transfo
 			boundLocal[b.Identifier] = true
 		}
 		for _, b := range v.Bindings {
-			tr, fr := LiftLambdasRec(b.Value, boundLocal, labels)
+			tr, fr := LiftLambdasRec(b.Value, boundLocal, labels, data)
 
 			for k := range fr {
 				if _, ok := boundLocal[k]; !ok {
@@ -866,7 +913,7 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transfo
 			binds = append(binds, Binding{b.Identifier, tr})
 		}
 
-		tr, fr := LiftLambdasRec(v.Body, boundLocal, labels)
+		tr, fr := LiftLambdasRec(v.Body, boundLocal, labels, data)
 
 		for k := range fr {
 			if _, ok := boundLocal[k]; !ok {
@@ -884,7 +931,7 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transfo
 			boundLocal[arg] = true
 		}
 
-		tr, fr := LiftLambdasRec(v.Code, boundLocal, labels)
+		tr, fr := LiftLambdasRec(v.Code, boundLocal, labels, data)
 
 		freeVars := make([]Identifier, 0)
 
@@ -935,7 +982,7 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transfo
 		children := make([]Node, 0)
 
 		for _, c := range v.Children {
-			tr, fr := LiftLambdasRec(c, boundLocal, labels)
+			tr, fr := LiftLambdasRec(c, boundLocal, labels, data)
 
 			for k := range fr {
 				free[k] = true
@@ -949,7 +996,7 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transfo
 		children := make([]Node, 0)
 
 		for _, c := range v.Children {
-			tr, fr := LiftLambdasRec(c, boundLocal, labels)
+			tr, fr := LiftLambdasRec(c, boundLocal, labels, data)
 
 			for k := range fr {
 				free[k] = true
@@ -962,7 +1009,7 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transfo
 	case Closure:
 		values := make([]Node, 0)
 		for _, c := range v.Values {
-			tr, fr := LiftLambdasRec(c, boundLocal, labels)
+			tr, fr := LiftLambdasRec(c, boundLocal, labels, data)
 
 			for k := range fr {
 				free[k] = true
@@ -974,7 +1021,7 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transfo
 	case Begin:
 		children := make([]Node, 0)
 		for _, c := range v.Children {
-			tr, fr := LiftLambdasRec(c, boundLocal, labels)
+			tr, fr := LiftLambdasRec(c, boundLocal, labels, data)
 
 			for k := range fr {
 				free[k] = true
@@ -984,25 +1031,34 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label) (transfo
 		}
 		return Begin{children}, free
 	case If:
-		tr_condition, fr := LiftLambdasRec(v.Condition, bound, labels)
+		tr_condition, fr := LiftLambdasRec(v.Condition, bound, labels, data)
 
 		for k := range fr {
 			free[k] = true
 		}
 
-		tr_consequent, fr := LiftLambdasRec(v.Consequent, bound, labels)
+		tr_consequent, fr := LiftLambdasRec(v.Consequent, bound, labels, data)
 
 		for k := range fr {
 			free[k] = true
 		}
 
-		tr_alternative, fr := LiftLambdasRec(v.Alternative, bound, labels)
+		tr_alternative, fr := LiftLambdasRec(v.Alternative, bound, labels, data)
 
 		for k := range fr {
 			free[k] = true
 		}
 
 		return If{Condition: tr_condition, Consequent: tr_consequent, Alternative: tr_alternative}, free
+	case Quote:
+		for i, d := range *data {
+			if reflect.DeepEqual(d.Init, v.Structure) {
+				return ConstantRef{i}, free
+			}
+		}
+
+		*data = append(*data, Datum{v.Structure})
+		return ConstantRef{len(*data) - 1}, free
 	default:
 		return n, free
 	}
@@ -1016,14 +1072,15 @@ func LiftLambdas(program Node) (Node, error) {
 
 	bound := make(map[Identifier]bool)
 	labels := make([]Label, 0)
+	data := make([]Datum, 0)
 
-	tr, free := LiftLambdasRec(program, bound, &labels)
+	tr, free := LiftLambdasRec(program, bound, &labels, &data)
 
 	if len(free) > 0 {
 		return nil, fmt.Errorf("Found free variable(s) in top level program: %v", free)
 	}
 
-	return Labels{LabelList: labels, Expression: tr}, nil
+	return Labels{LabelList: labels, Data: data, Expression: tr}, nil
 }
 
 func TailCallOptimize(n Node, isTail bool) (Node, error) {
@@ -1047,7 +1104,7 @@ func TailCallOptimize(n Node, isTail bool) (Node, error) {
 			labels = append(labels, Label{l.Identifier, nl.(Code)})
 		}
 
-		return Labels{LabelList: labels, Expression: exp}, nil
+		return Labels{LabelList: labels, Expression: exp, Data: v.Data}, nil
 	case SExp:
 		_, isClosure := v.Children[0].(Closure)
 		id, isIdent := v.Children[0].(Identifier)
@@ -1269,7 +1326,7 @@ func main() {
 
 	liftedProgram, err := LiftLambdas(expandedProgram)
 
-	check(err)
+	//panic(fmt.Errorf("%+v\n", liftedProgram))
 
 	tailCalled, err := TailCallOptimize(liftedProgram, true)
 
