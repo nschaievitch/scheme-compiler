@@ -267,6 +267,10 @@ testSuites = {
         ('(let ((a (quote "hi")) (b (quote "hi"))) (eq? a b))', "#t"),
         ('(let ((a (quote "hi")) (b (quote "bye"))) (eq? a b))', "#f"),
         ('(let ((a (quote (cons "ok" 1))) (b (quote (cons "ok" 1)))) (eq? a b))', "#t"),
+    ],
+    "variadic": [
+        ("((lambda (a . b) (cons a (car (cdr b)))) 1 2 3)", "(1 . 3)"), 
+        ("(list 1 2 3 4)", "(1 . (2 . (3 . (4 . '()))))")
     ]
 }
 

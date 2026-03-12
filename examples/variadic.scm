@@ -1,0 +1,1 @@
+((lambda (a . b) (cons a (car (cdr b)))) 1 2 3)

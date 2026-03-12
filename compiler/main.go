@@ -60,6 +60,7 @@ const (
 	PUSH_NIL
 	CONSTANT_INIT
 	CONSTANT_REF
+	COLLECT_REST
 )
 
 const FIXNUM_MASK = 0b11
@@ -199,6 +200,7 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 
 			if v.Name == "funcall" {
 				ws = append(ws, FUNCALL)
+				ws = append(ws, Word((len(s.Children) - 2)))
 			} else {
 				ws = append(ws, TAILCALL)
 				ws = append(ws, Word((len(s.Children) - 2)))
@@ -221,6 +223,7 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 			}
 
 			ws = append(ws, FUNCALL)
+			ws = append(ws, Word((len(s.Children) - 1)))
 
 			*stackIndex -= len(s.Children) - 1
 			return ws, nil
@@ -241,6 +244,7 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 		}
 
 		ws = append(ws, FUNCALL)
+		ws = append(ws, Word((len(s.Children) - 1)))
 
 		*stackIndex -= len(s.Children) - 1
 		return ws, nil
@@ -583,6 +587,7 @@ func (b Begin) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 type Code struct {
 	Vars       []Identifier
 	FreeVars   []Identifier
+	RestArg    *Identifier
 	Expression Node
 }
 
@@ -602,15 +607,20 @@ func (c Code) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 	var localEnv Environment
 	localEnv = CopyMap(*env)
 
-	for i, v := range c.Vars {
-		localEnv[v] = VariableResolution{len(c.Vars) - i - 1, false, false} // vars should be in %ebp + varNum, in reverse order
+	allVars := c.Vars
+	if c.RestArg != nil {
+		allVars = append(append([]Identifier{}, c.Vars...), *c.RestArg)
+	}
+
+	for i, v := range allVars {
+		localEnv[v] = VariableResolution{len(allVars) - i - 1, false, false} // vars should be in %ebp + varNum, in reverse order
 	}
 
 	for i, v := range c.FreeVars {
 		localEnv[v] = VariableResolution{i, true, false} // free vars are taken from the closure
 	}
 
-	localStackIndex := len(c.Vars)
+	localStackIndex := len(allVars)
 
 	code, err := c.Expression.Compile(&localEnv, &localStackIndex)
 
@@ -691,8 +701,10 @@ func (l Labels) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 }
 
 type Closure struct {
-	LVar   Identifier
-	Values []Node
+	LVar       Identifier
+	Values     []Node
+	IsVariadic bool
+	ArgLen     int
 }
 
 func (c Closure) Compile(env *Environment, stackIndex *int) ([]Word, error) {
@@ -714,7 +726,13 @@ func (c Closure) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 		code = append(code, words...)
 	}
 
-	code = append(code, CLOSURE, Word(label.Offset), Word(len(c.Values)))
+	arityIndicator := c.ArgLen << 1
+
+	if c.IsVariadic {
+		arityIndicator += 1 // we use the lsb to indicate if the closure is variadic
+	}
+
+	code = append(code, CLOSURE, Word(label.Offset), Word(len(c.Values)), Word(arityIndicator))
 
 	*stackIndex -= len(c.Values) - 1
 
@@ -723,8 +741,9 @@ func (c Closure) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 }
 
 type Lambda struct {
-	Args []Identifier
-	Code Node
+	Args    []Identifier
+	RestArg *Identifier
+	Code    Node
 }
 
 func (l Lambda) Compile(env *Environment, stackIndex *int) ([]Word, error) {
@@ -811,7 +830,7 @@ func EtaExpandBuiltins(n Node) Node {
 			Alternative: EtaExpandBuiltins(v.Alternative),
 		}
 	case Lambda:
-		return Lambda{Args: v.Args, Code: EtaExpandBuiltins(v.Code)}
+		return Lambda{Args: v.Args, Code: EtaExpandBuiltins(v.Code), RestArg: v.RestArg}
 	case Begin:
 		children := make([]Node, len(v.Children))
 
@@ -930,6 +949,9 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label, data *[]
 		for _, arg := range v.Args {
 			boundLocal[arg] = true
 		}
+		if v.RestArg != nil {
+			boundLocal[*v.RestArg] = true
+		}
 
 		tr, fr := LiftLambdasRec(v.Code, boundLocal, labels, data)
 
@@ -949,6 +971,7 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label, data *[]
 				Vars:       v.Args,
 				FreeVars:   freeVars,
 				Expression: tr,
+				RestArg:    v.RestArg,
 			},
 		}
 
@@ -961,9 +984,19 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label, data *[]
 			freeVarNodes = append(freeVarNodes, vr)
 		}
 
+		isVariadic := v.RestArg != nil
+
+		argLen := len(v.Args)
+
+		if isVariadic {
+			argLen += 1
+		}
+
 		return Closure{
-			LVar:   labName,
-			Values: freeVarNodes,
+			LVar:       labName,
+			Values:     freeVarNodes,
+			IsVariadic: isVariadic,
+			ArgLen:     argLen,
 		}, free
 
 	case Identifier:
@@ -1017,7 +1050,7 @@ func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label, data *[]
 
 			values = append(values, tr)
 		}
-		return Closure{v.LVar, values}, free
+		return Closure{v.LVar, values, v.IsVariadic, v.ArgLen}, free
 	case Begin:
 		children := make([]Node, 0)
 		for _, c := range v.Children {
@@ -1228,6 +1261,7 @@ func TailCallOptimize(n Node, isTail bool) (Node, error) {
 			Vars:       v.Vars,
 			FreeVars:   v.FreeVars,
 			Expression: exp,
+			RestArg:    v.RestArg,
 		}, nil
 	}
 
@@ -1254,7 +1288,7 @@ func AddStdlib(program Node) (Node, error) {
 
 	return LetRec{append([]Binding{{Identifier{
 		"main",
-	}, Lambda{[]Identifier{}, program}}}, stdlib_letrec.Bindings...), stdlib_letrec.Body}, nil
+	}, Lambda{[]Identifier{}, nil, program}}}, stdlib_letrec.Bindings...), stdlib_letrec.Body}, nil
 }
 
 func (c *Compiler) Emit(w Word) {

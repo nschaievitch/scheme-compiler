@@ -1087,6 +1087,9 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 heap[heap_pointer] = label_add;
 
                 let args_len: usize = readword(&code, &mut pc)?.try_into()?;
+                let arg_indicator = readword(&code, &mut pc)?;
+
+                heap[heap_pointer + 1] = arg_indicator;
 
                 if stack.len() < args_len {
                     return Err(eyre!(
@@ -1100,20 +1103,23 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                         .ok_or(eyre!("Error popping from stack to create closure"))?;
 
                     if check_boxed_formal(val) {
-                        control_stack.push(heap_pointer + i);
+                        control_stack.push(heap_pointer + i + 1);
                     }
 
-                    heap[heap_pointer + i] = val;
+                    heap[heap_pointer + i + 1] = val;
                 }
 
                 stack.push(box_closure(heap_pointer));
-                heap_pointer += args_len + 1;
+                heap_pointer += args_len + 2;
             }
 
             Op::FUNCALL => {
+                let n_args: usize = readword(&code, &mut pc)?.try_into()?;
+                
                 stack_base_pointer = control_stack
                     .pop()
                     .ok_or(eyre!("funcall with empty control stack"))?;
+                
                 control_stack.push(box_closure(current_closure).try_into()?);
                 control_stack.push(pc);
 
@@ -1126,8 +1132,42 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                     return Err(eyre!("Invalid closure pointer {}", boxed_closure_pointer));
                 }
 
+                
                 control_stack.push(boxed_closure_pointer.try_into()?);
                 current_closure = read_boxed_pointer(boxed_closure_pointer)?;
+
+                let arg_indicator: usize = heap[current_closure + 1].try_into()?;
+
+                // is variadic
+                if arg_indicator & 1 == 1 {
+                    let arg_count = arg_indicator >> 1;
+                    let have_to_collect = n_args - arg_count + 1;
+                    let skip = arg_count - 1; // required params to keep
+
+                    let mut required = Vec::with_capacity(skip);
+                    for _ in 0..skip {
+                        required.push(stack.pop().ok_or(eyre!("Stack underflow collecting variadic args"))?);
+                    }
+
+                    let mut rest_vals = Vec::with_capacity(have_to_collect);
+                    for _ in 0..have_to_collect {
+                        rest_vals.push(stack.pop().ok_or(eyre!("Stack underflow collecting variadic args"))?);
+                    }
+
+                    let mut rest = NIL_VAL;
+                    for &val in rest_vals.iter().rev() {
+                        heap[heap_pointer] = val;
+                        heap[heap_pointer + 1] = rest;
+                        rest = box_pair(heap_pointer);
+                        heap_pointer += 2;
+                    }
+
+                    // Rest list at base+0, then required args above
+                    stack.push(rest);
+                    for &val in required.iter() {
+                        stack.push(val);
+                    }
+                }
 
                 let label_add: usize = heap[current_closure].try_into()?;
                 let jump_pos: usize = code[label_add].try_into()?;
@@ -1141,7 +1181,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
                 let var_index: usize = readword(&code, &mut pc)?.try_into()?;
 
-                let val = heap[closure_pointer + var_index + 1];
+                let val = heap[closure_pointer + var_index + 2];
 
                 stack.push(val)
             }
@@ -1178,6 +1218,39 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 }
 
                 current_closure = read_boxed_pointer(boxed_closure_pointer)?;
+
+                let arg_indicator: usize = heap[current_closure + 1].try_into()?;
+
+                // is variadic
+                if arg_indicator & 1 == 1 {
+                    let arg_count = arg_indicator >> 1;
+                    let have_to_collect = n_args - arg_count + 1;
+                    let skip = arg_count - 1; // required params to keep
+
+                    let mut required = Vec::with_capacity(skip);
+                    for _ in 0..skip {
+                        required.push(stack.pop().ok_or(eyre!("Stack underflow collecting variadic args"))?);
+                    }
+
+                    let mut rest_vals = Vec::with_capacity(have_to_collect);
+                    for _ in 0..have_to_collect {
+                        rest_vals.push(stack.pop().ok_or(eyre!("Stack underflow collecting variadic args"))?);
+                    }
+
+                    let mut rest = NIL_VAL;
+                    for &val in rest_vals.iter().rev() {
+                        heap[heap_pointer] = val;
+                        heap[heap_pointer + 1] = rest;
+                        rest = box_pair(heap_pointer);
+                        heap_pointer += 2;
+                    }
+
+                    // Rest list at base+0, then required args above
+                    stack.push(rest);
+                    for &val in required.iter() {
+                        stack.push(val);
+                    }
+                }
 
                 let label_add: usize = heap[current_closure].try_into()?;
                 let jump_pos: usize = code[label_add].try_into()?;
@@ -1231,6 +1304,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
                 stack.push(constant)
             }
+
         }
     }
 }

@@ -8,5 +8,6 @@
          (foldr (lambda (f init l)
             (if (null? l)
                 init
-                (f (car l) (foldr f init (cdr l)))))))                
-                (main))
+                (f (car l) (foldr f init (cdr l))))))
+         (list (lambda args args)))                
+        (main))

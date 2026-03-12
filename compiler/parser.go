@@ -358,27 +358,56 @@ func (p *Parser) Parse() (Node, error) {
 
 			varsExp, ok := children[1].(SExp)
 
-			if !ok {
-				return nil, fmt.Errorf("Invalid variables for code expression")
-			}
+			if ok {
 
-			vars := make([]Identifier, 0)
+				vars := make([]Identifier, 0)
+				var rest *Identifier = nil
 
-			for _, v := range varsExp.Children {
-				id, ok := v.(Identifier)
+				for i, v := range varsExp.Children {
+					id, ok := v.(Identifier)
 
-				if !ok {
-					return nil, fmt.Errorf("Invalid variable %v for lambda expression", v)
+					if !ok {
+						return nil, fmt.Errorf("Invalid variable %v for lambda expression", v)
+					}
+
+					if id.Name == "." {
+						if i != len(varsExp.Children)-2 {
+							return nil, fmt.Errorf("Invalid variadic lambda, . should be in second to last position")
+						}
+
+						rest_i, ok := varsExp.Children[len(varsExp.Children)-1].(Identifier)
+
+						if !ok {
+							return nil, fmt.Errorf("Invalid variadic parameter; should be identifier")
+						}
+
+						rest = &rest_i
+						break
+
+					} else {
+						vars = append(vars, id)
+					}
 				}
+				return Lambda{
+					Args:    vars,
+					Code:    children[2],
+					RestArg: rest,
+				}, nil
 
-				vars = append(vars, id)
 			}
 
-			return Lambda{
-				Args: vars,
-				Code: children[2],
-			}, nil
+			varExp, ok := children[1].(Identifier)
 
+			if ok {
+				rest := &varExp
+				return Lambda{
+					Args:    []Identifier{},
+					Code:    children[2],
+					RestArg: rest,
+				}, nil
+			}
+
+			return nil, fmt.Errorf("Invalid variables for code expression")
 		}
 
 		if len(children) > 0 && children[0] == quote_id {
