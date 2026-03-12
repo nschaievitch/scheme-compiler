@@ -271,6 +271,11 @@ testSuites = {
     "variadic": [
         ("((lambda (a . b) (cons a (car (cdr b)))) 1 2 3)", "(1 . 3)"), 
         ("(list 1 2 3 4)", "(1 . (2 . (3 . (4 . '()))))")
+    ],
+    "apply": [
+        ("(let ((compose (lambda (f g) (lambda args (f (apply g args)))))) ((compose add1 -) 20 10))", 11),
+        ("(apply add1 (cons 41 '()))", 42),
+        ("(apply + (cons 20 (cons 22 '())))", 42),
     ]
 }
 

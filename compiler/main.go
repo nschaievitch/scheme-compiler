@@ -60,7 +60,7 @@ const (
 	PUSH_NIL
 	CONSTANT_INIT
 	CONSTANT_REF
-	COLLECT_REST
+	UNPACK_LIST
 )
 
 const FIXNUM_MASK = 0b11
@@ -185,7 +185,7 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 
 			*stackIndex -= len(s.Children) - 2
 			return ws, nil
-		} else if v.Name == "funcall" || v.Name == "tailcall" { // ugly repeated code... should improve...
+		} else if v.Name == "funcall" || v.Name == "tailcall" || v.Name == "apply" { // ugly repeated code... should improve...
 			ws = append(ws, SETUP_STACK_BASE)
 
 			for i := len(s.Children) - 1; i >= 1; i-- {
@@ -198,15 +198,25 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 				ws = append(ws, childrenWords...)
 			}
 
-			if v.Name == "funcall" {
-				ws = append(ws, FUNCALL)
-				ws = append(ws, Word((len(s.Children) - 2)))
-			} else {
-				ws = append(ws, TAILCALL)
-				ws = append(ws, Word((len(s.Children) - 2)))
+			if v.Name == "apply" {
+				*stackIndex -= 1
+				ws = append(ws, UNPACK_LIST, FUNCALL)
+
+				return ws, nil
 			}
 
-			*stackIndex -= len(s.Children) - 2
+			nArgs := len(s.Children) - 2
+			boxedNArgs, _ := Uint{uint64(nArgs)}.Box()
+			ws = append(ws, LOAD64, boxedNArgs)
+			*stackIndex += 1
+
+			if v.Name == "funcall" {
+				ws = append(ws, FUNCALL)
+			} else {
+				ws = append(ws, TAILCALL)
+			}
+
+			*stackIndex -= len(s.Children) - 1
 			return ws, nil
 
 		} else if _, ok := BUILTINS[v.Name]; !ok { // if it is a variable, do implicit funcall
@@ -222,10 +232,13 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 				ws = append(ws, childrenWords...)
 			}
 
+			nArgs := len(s.Children) - 1
+			boxedNArgs, _ := Uint{uint64(nArgs)}.Box()
+			ws = append(ws, LOAD64, boxedNArgs)
+			*stackIndex += 1
 			ws = append(ws, FUNCALL)
-			ws = append(ws, Word((len(s.Children) - 1)))
 
-			*stackIndex -= len(s.Children) - 1
+			*stackIndex -= len(s.Children)
 			return ws, nil
 
 		}
@@ -243,10 +256,13 @@ func (s SExp) Compile(env *Environment, stackIndex *int) ([]Word, error) {
 			ws = append(ws, childrenWords...)
 		}
 
+		nArgs := len(s.Children) - 1
+		boxedNArgs, _ := Uint{uint64(nArgs)}.Box()
+		ws = append(ws, LOAD64, boxedNArgs)
+		*stackIndex += 1
 		ws = append(ws, FUNCALL)
-		ws = append(ws, Word((len(s.Children) - 1)))
 
-		*stackIndex -= len(s.Children) - 1
+		*stackIndex -= len(s.Children)
 		return ws, nil
 	default:
 		return []Word{}, fmt.Errorf("Invalid functor in S-Expression: %s", s.Children[0]) // TODO: improve message
@@ -793,7 +809,12 @@ func EtaExpandBuiltins(n Node) Node {
 	switch v := n.(type) {
 	case SExp:
 		children := make([]Node, len(v.Children))
-		children[0] = v.Children[0]
+
+		if _, isIdent := v.Children[0].(Identifier); isIdent {
+			children[0] = v.Children[0]
+		} else {
+			children[0] = EtaExpandBuiltins(v.Children[0])
+		}
 
 		for i := 1; i < len(v.Children); i++ {
 			child := EtaExpandBuiltins(v.Children[i])
@@ -879,6 +900,7 @@ var BUILTINS = map[string]int{
 	"tailcall":      1,
 	"labelcall":     1,
 	"'()":           0,
+	"apply":         2,
 }
 
 func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label, data *[]Datum) (transformed Node, free map[Identifier]bool) {
@@ -1359,6 +1381,8 @@ func main() {
 	expandedProgram := EtaExpandBuiltins(linkedProgram)
 
 	liftedProgram, err := LiftLambdas(expandedProgram)
+
+	check(err)
 
 	//panic(fmt.Errorf("%+v\n", liftedProgram))
 

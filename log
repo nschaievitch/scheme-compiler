@@ -1,1 +1,139 @@
-(1 . (3 . '()))
+[31mError interpreting (let ((compose
+  (lambda (f g)
+    (lambda args
+      (f (apply g args))))))
+
+((compose add1 *) 12 75)): [src/main.rs:287:9] &instr = CLOSURE
+[src/main.rs:287:9] &pc = 152
+[src/main.rs:287:9] &code[pc - 1] = 35
+[src/main.rs:287:9] &instr = LOAD_VAR_DEFER
+[src/main.rs:287:9] &pc = 156
+[src/main.rs:287:9] &code[pc - 1] = 40
+[src/main.rs:287:9] &instr = CLOSURE
+[src/main.rs:287:9] &pc = 158
+[src/main.rs:287:9] &code[pc - 1] = 35
+[src/main.rs:287:9] &instr = LOAD_VAR_DEFER
+[src/main.rs:287:9] &pc = 162
+[src/main.rs:287:9] &code[pc - 1] = 40
+[src/main.rs:287:9] &instr = CLOSURE
+[src/main.rs:287:9] &pc = 164
+[src/main.rs:287:9] &code[pc - 1] = 35
+[src/main.rs:287:9] &instr = LOAD_VAR_DEFER
+[src/main.rs:287:9] &pc = 168
+[src/main.rs:287:9] &code[pc - 1] = 40
+[src/main.rs:287:9] &instr = CLOSURE
+[src/main.rs:287:9] &pc = 170
+[src/main.rs:287:9] &code[pc - 1] = 35
+[src/main.rs:287:9] &instr = CLOSURE
+[src/main.rs:287:9] &pc = 174
+[src/main.rs:287:9] &code[pc - 1] = 35
+[src/main.rs:287:9] &instr = SET_DEFERRED
+[src/main.rs:287:9] &pc = 178
+[src/main.rs:287:9] &code[pc - 1] = 41
+[src/main.rs:1277:17] &n = 3
+[src/main.rs:1277:17] &control_stack = [
+    4,
+    7,
+    10,
+]
+[src/main.rs:1277:17] &heap[..10] = [
+    3,
+    0,
+    4,
+    4,
+    13,
+    5,
+    6,
+    21,
+    6,
+    6,
+]
+[src/main.rs:1287:17] &heap[..10] = [
+    3,
+    0,
+    4,
+    4,
+    22,
+    5,
+    6,
+    46,
+    6,
+    6,
+]
+[src/main.rs:287:9] &instr = SETUP_STACK_BASE
+[src/main.rs:287:9] &pc = 180
+[src/main.rs:287:9] &code[pc - 1] = 33
+[src/main.rs:287:9] &instr = LOAD_VAR
+[src/main.rs:287:9] &pc = 181
+[src/main.rs:287:9] &code[pc - 1] = 19
+[src/main.rs:636:17] &stack = [
+    6,
+    22,
+    46,
+    70,
+    94,
+]
+[src/main.rs:636:17] &stack_index = 0
+[src/main.rs:287:9] &instr = LOAD64
+[src/main.rs:287:9] &pc = 183
+[src/main.rs:287:9] &code[pc - 1] = 1
+[src/main.rs:287:9] &instr = TAILCALL
+[src/main.rs:287:9] &pc = 185
+[src/main.rs:287:9] &code[pc - 1] = 39
+[src/main.rs:1264:17] &stack = []
+[src/main.rs:1264:17] &jump_pos = 31
+[src/main.rs:1264:17] &label_add = 3
+[src/main.rs:287:9] &instr = CLOSURE
+[src/main.rs:287:9] &pc = 32
+[src/main.rs:287:9] &code[pc - 1] = 35
+[src/main.rs:287:9] &instr = SETUP_STACK_BASE
+[src/main.rs:287:9] &pc = 36
+[src/main.rs:287:9] &code[pc - 1] = 33
+[src/main.rs:287:9] &instr = LOAD64
+[src/main.rs:287:9] &pc = 37
+[src/main.rs:287:9] &code[pc - 1] = 1
+[src/main.rs:287:9] &instr = LOAD64
+[src/main.rs:287:9] &pc = 39
+[src/main.rs:287:9] &code[pc - 1] = 1
+[src/main.rs:287:9] &instr = SETUP_STACK_BASE
+[src/main.rs:287:9] &pc = 41
+[src/main.rs:287:9] &code[pc - 1] = 33
+[src/main.rs:287:9] &instr = TIMES
+[src/main.rs:287:9] &pc = 42
+[src/main.rs:287:9] &code[pc - 1] = 15
+[src/main.rs:287:9] &instr = ADD1
+[src/main.rs:287:9] &pc = 43
+[src/main.rs:287:9] &code[pc - 1] = 5
+[src/main.rs:287:9] &instr = LOAD_VAR
+[src/main.rs:287:9] &pc = 44
+[src/main.rs:287:9] &code[pc - 1] = 19
+[src/main.rs:636:17] &stack = [
+    110,
+    3604,
+]
+[src/main.rs:636:17] &stack_index = 0
+[src/main.rs:287:9] &instr = LOAD64
+[src/main.rs:287:9] &pc = 46
+[src/main.rs:287:9] &code[pc - 1] = 1
+[src/main.rs:287:9] &instr = FUNCALL
+[src/main.rs:287:9] &pc = 48
+[src/main.rs:287:9] &code[pc - 1] = 36
+[src/main.rs:1178:17] &stack = [
+    110,
+    3604,
+]
+[src/main.rs:1178:17] &jump_pos = 22
+[src/main.rs:1178:17] &label_add = 2
+[src/main.rs:287:9] &instr = LOAD_VAR
+[src/main.rs:287:9] &pc = 23
+[src/main.rs:287:9] &code[pc - 1] = 19
+[src/main.rs:636:17] &stack = [
+    110,
+    3604,
+]
+[src/main.rs:636:17] &stack_index = 1
+Error: Invalid variable load from bad position, tried to grab position 4 from stack of length 2
+
+Location:
+    src/main.rs:639:28
+[0m

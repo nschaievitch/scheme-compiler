@@ -1,6 +1,5 @@
 use std::{
-    io::{self, Read},
-    u64,
+    boxed, io::{self, Read}, u64
 };
 
 use eyre::{Result, eyre};
@@ -54,6 +53,7 @@ pub enum Op {
     PUSH_NIL,
     CONSTANT_INIT,
     CONSTANT_REF,
+    UNPACK_LIST
 }
 
 const HEAP_SIZE: usize = 1 << 10;
@@ -1114,7 +1114,10 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
             }
 
             Op::FUNCALL => {
-                let n_args: usize = readword(&code, &mut pc)?.try_into()?;
+                let n_args_boxed = stack
+                    .pop()
+                    .ok_or(eyre!("Expected arg count on stack for funcall"))?;
+                let n_args: usize = read_boxed_number(n_args_boxed)?.try_into()?;
                 
                 stack_base_pointer = control_stack
                     .pop()
@@ -1201,7 +1204,10 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 control_stack.pop();
                 control_stack.pop();
 
-                let n_args: usize = readword(&code, &mut pc)?.try_into()?;
+                let n_args_boxed = stack
+                    .pop()
+                    .ok_or(eyre!("Expected arg count on stack for tailcall"))?;
+                let n_args: usize = read_boxed_number(n_args_boxed)?.try_into()?;
                 let start = stack.len() - (n_args + 1);
 
                 stack.copy_within(start.., stack_base_pointer);
@@ -1303,6 +1309,43 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 let constant = constants[idx];
 
                 stack.push(constant)
+            }
+
+            Op::UNPACK_LIST => {
+                let boxed_pointer = stack
+                    .pop()
+                    .ok_or(eyre!("Error popping from stack to get apply method"))?;
+
+                if !check_boxed_closure_pointer(boxed_pointer) {
+                    return Err(eyre!("Tried to call apply with a non-method"));
+                }
+
+                let mut boxed_list = stack
+                    .pop()
+                    .ok_or(eyre!("Error popping from stack to get apply list"))?;
+
+                if !check_boxed_pair_pointer(boxed_list) {
+                    return Err(eyre!("Tried to call apply with a non-list"));
+                }
+
+                let mut args = Vec::new();
+
+                while boxed_list != NIL_VAL {
+                    let pointer = read_boxed_pointer(boxed_list)?;
+                    let car = heap[pointer];
+
+                    args.push(car);
+                    boxed_list = heap[pointer + 1];
+                }
+
+                let args_count = box_number(args.len().try_into()?)?;
+
+                args.iter().rev().for_each(|a| {
+                    stack.push(a.clone());
+                });
+
+                stack.push(boxed_pointer);
+                stack.push(args_count);
             }
 
         }
