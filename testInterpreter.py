@@ -285,6 +285,11 @@ testSuites = {
         ("(define a 10) (define b 20) (cons a b)", "(10 . 20)"),
         ("(define a b) (define b 20) a", ERROR),
         ("(define a 10) (define b (* 2 a)) b", 20)
+    ],
+    "let*": [
+        ("(let* ((a 10) (b (* 2 a))) b)", 20),
+        ("(let* ((a b) (b 10)) a)", ERROR),
+        ("(let* ((a 10) (b (* 2 a)) (c (- b 5))) c)", 15)
     ]
 }
 

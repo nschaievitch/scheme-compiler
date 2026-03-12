@@ -187,10 +187,11 @@ func (p *Parser) Parse() (Node, error) {
 		closure_id := Identifier{"closure"}
 		lambda_id := Identifier{"lambda"}
 		quote_id := Identifier{"quote"}
+		letstar_id := Identifier{"let*"}
 
 		// test if SExp is another binding
 
-		if len(children) > 0 && (children[0] == let_id || children[0] == letrec_id) {
+		if len(children) > 0 && (children[0] == let_id || children[0] == letrec_id || children[0] == letstar_id) {
 			if len(children) != 3 {
 				return nil, fmt.Errorf("Invalid let form, must have three children %+v, %d", children, len(children))
 			}
@@ -222,6 +223,17 @@ func (p *Parser) Parse() (Node, error) {
 				default:
 					return nil, fmt.Errorf("Invalid let binding %v", b)
 				}
+			}
+
+			if children[0] == letstar_id {
+				var p Node = children[len(children)-1]
+
+				for i := len(bindings) - 1; i >= 0; i-- {
+					b := bindings[i]
+					p = Let{[]Binding{b}, p}
+				}
+
+				return p, nil
 			}
 
 			if children[0] == let_id {
