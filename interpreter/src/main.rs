@@ -1,5 +1,5 @@
 use std::{
-    boxed, io::{self, Read}, u64
+    io::{self, Read}, u64
 };
 
 use eyre::{Result, eyre};
@@ -57,7 +57,7 @@ pub enum Op {
 }
 
 const HEAP_SIZE: usize = 1 << 10;
-const DEBUG_MAX_STACK_SIZE: usize = 1 << 8;
+const DEBUG_MAX_STACK_SIZE: usize = 1 << 12;
 
 const FIXNUM_MASK: u64 = 0b11;
 const FIXNUM_TAG: u64 = 0b00;
@@ -331,7 +331,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
                 dbg!(print_boxed(val.clone(), &heap[..])?);
 
-                if stack_base_pointer == 0 {
+                if control_stack.is_empty() {
                     dbg!(&stack);
                     dbg!(&heap[..10]);
                     return Ok(val);
