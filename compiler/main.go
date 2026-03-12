@@ -922,6 +922,8 @@ var BUILTINS = map[string]int{
 	"labelcall":     1,
 	"'()":           0,
 	"apply":         2,
+	"or":            2,
+	"and":           2,
 }
 
 func LiftLambdasRec(n Node, bound map[Identifier]bool, labels *[]Label, data *[]Datum) (transformed Node, free map[Identifier]bool) {

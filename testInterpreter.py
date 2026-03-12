@@ -255,6 +255,10 @@ testSuites = {
         ("(foldl cons '() (cons 1 (cons 2 (cons 3 (cons 4 '())))))", "(4 . (3 . (2 . (1 . '()))))"), 
         ("(foldr + 0 (cons 1 (cons 2 (cons 3 (cons 4 '())))))", 10),
         ("(foldr cons '() (cons 1 (cons 2 (cons 3 (cons 4 '())))))", "(1 . (2 . (3 . (4 . '()))))"), 
+        ("(modulo 17 4)", 1),
+        ("(modulo 16 4)", 0),
+        ("(modulo 1201 3)", 1),
+        ("(filter (lambda (x) (< x 10)) (list 1 2 10 3 20 4 30 5))", "(1 . (2 . (3 . (4 . (5 . '())))))")
     ],
     "quotes": [
         ("(let ((a (quote (cons 1 2))) (b (quote (cons 1 2)))) (eq? a b))", "#t"),
