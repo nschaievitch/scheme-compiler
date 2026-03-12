@@ -10,6 +10,7 @@ INTERPRETER = "./interpreter/target/debug/interpreter"
 
 
 def testCase(source):
+    print("compiling...")
     comp = subprocess.run(
         [COMPILER],
         input=source.encode("utf-8"),
@@ -21,6 +22,7 @@ def testCase(source):
         print(f"{RED}Error compiling {source}: {comp.stderr.decode('utf-8')}{RESET}")
         return False
 
+    print("interpretting...")
     interp = subprocess.run(
         [INTERPRETER],
         input=comp.stdout,

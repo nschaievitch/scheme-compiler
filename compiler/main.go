@@ -853,10 +853,31 @@ func EtaExpandBuiltins(n Node) Node {
 	case Lambda:
 		return Lambda{Args: v.Args, Code: EtaExpandBuiltins(v.Code), RestArg: v.RestArg}
 	case Begin:
-		children := make([]Node, len(v.Children))
+		// also hoist defines
+		children := make([]Node, 0)
+		defines := make([]Binding, 0)
+
+		id_define := Identifier{"define"}
 
 		for i, e := range v.Children {
-			children[i] = EtaExpandBuiltins(e)
+			se, ok := v.Children[i].(SExp)
+
+			if ok && se.Children[0] == id_define {
+				defines = append(defines, Binding{Identifier: se.Children[1].(Identifier), Value: EtaExpandBuiltins(se.Children[2])})
+				continue
+			}
+
+			children = append(children, EtaExpandBuiltins(e))
+		}
+
+		if len(defines) > 0 {
+			var p Node = Begin{children}
+
+			for i := len(defines) - 1; i >= 0; i-- {
+				p = Let{[]Binding{defines[i]}, p}
+			}
+
+			return p
 		}
 		return Begin{Children: children}
 	case Vector:

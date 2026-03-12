@@ -1,0 +1,1 @@
+(let ((pair (cons 10 20))) (car pair))

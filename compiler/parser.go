@@ -120,7 +120,9 @@ func (p *Parser) Parse() (Node, error) {
 	c := p.Peek()
 	switch c {
 	case 0:
-		return nil, fmt.Errorf("Unexpected end of input\n")
+		return nil, nil
+	case ')':
+		return nil, fmt.Errorf("Unexpected closing paren at position %d", p.Pos)
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		num, e := p.ParseNumber()
 		return Uint{num}, e
@@ -442,5 +444,31 @@ func MakeParser(source string) Parser {
 
 func SchemeParse(source string) (Node, error) {
 	p := MakeParser(source)
-	return p.Parse()
+
+	program, err := p.Parse()
+
+	if err != nil {
+		return nil, err
+	}
+
+	stmts := make([]Node, 1)
+	stmts[0] = program
+
+	for p.Pos < len(source) {
+		program, err = p.Parse()
+
+		if err != nil {
+			return nil, err
+		}
+
+		if program != nil {
+			stmts = append(stmts, program)
+		}
+	}
+
+	if len(stmts) == 1 {
+		return stmts[0], nil
+	}
+
+	return Begin{stmts}, nil
 }

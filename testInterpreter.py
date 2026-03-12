@@ -21,6 +21,9 @@ def testCase(source, expected):
     )
 
     if comp.returncode != 0:
+        if expected == ERROR:
+            return True
+
         print(f"{RED}Error compiling {source}: {comp.stderr.decode('utf-8')}{RESET}")
         return False
 
@@ -137,8 +140,8 @@ testSuites = {
         ("(car (cons 1 2))", 1),
         ("(cdr (cons 1 2))", 2),
         ("(cdr (car (cons (cons 1 2) 3)))", 2),
-        ("(let ((pair (cons 10 20))) (car pair)))", 10),
-        ("(let ((pair (cons 10 (cons 20 30)))) (car (cdr pair))))", 20),
+        ("(let ((pair (cons 10 20))) (car pair))", 10),
+        ("(let ((pair (cons 10 (cons 20 30)))) (car (cdr pair)))", 20),
     ],
     "Vector operations": [
         ("(vector-ref (vector 1 2 3) 1)", 2),
@@ -276,6 +279,12 @@ testSuites = {
         ("(let ((compose (lambda (f g) (lambda args (f (apply g args)))))) ((compose add1 -) 20 10))", 11),
         ("(apply add1 (cons 41 '()))", 42),
         ("(apply + (cons 20 (cons 22 '())))", 42),
+    ],
+    "define": [
+        ("(define a 10) a", 10),
+        ("(define a 10) (define b 20) (cons a b)", "(10 . 20)"),
+        ("(define a b) (define b 20) a", ERROR),
+        ("(define a 10) (define b (* 2 a)) b", 20)
     ]
 }
 
