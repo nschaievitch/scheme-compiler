@@ -290,6 +290,22 @@ testSuites = {
         ("(let* ((a 10) (b (* 2 a))) b)", 20),
         ("(let* ((a b) (b 10)) a)", ERROR),
         ("(let* ((a 10) (b (* 2 a)) (c (- b 5))) c)", 15)
+    ],
+    "boolean ops and shortcircuitting": [
+        ("(or #t #t)", "#t"),
+        ("(or #t #f)", "#t"),
+        ("(or #f #t)", "#t"),
+        ("(or #f #f)", "#f"),
+        ("(define v (vector 1)) (or #t (vector-set! v 0 2)) (vector-ref v 0)", "1"),
+        ("(define v (vector 1)) (or #f (vector-set! v 0 2)) (vector-ref v 0)", "2"),
+        ("(define v (vector 1)) (or #f #t (vector-set! v 0 2)) (vector-ref v 0)", "1"),
+        ("(and #t #t)", "#t"),
+        ("(and #t #f)", "#f"),
+        ("(and #f #t)", "#f"),
+        ("(and #f #f)", "#f"),
+        ("(define v (vector 1)) (and #f (vector-set! v 0 2)) (vector-ref v 0)", "1"),
+        ("(define v (vector 1)) (and #t (vector-set! v 0 2)) (vector-ref v 0)", "2"),
+        ("(define v (vector 1)) (and #t #f (vector-set! v 0 2)) (vector-ref v 0)", "1"),
     ]
 }
 

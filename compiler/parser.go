@@ -188,6 +188,8 @@ func (p *Parser) Parse() (Node, error) {
 		lambda_id := Identifier{"lambda"}
 		quote_id := Identifier{"quote"}
 		letstar_id := Identifier{"let*"}
+		or_id := Identifier{"or"}
+		and_id := Identifier{"and"}
 
 		// test if SExp is another binding
 
@@ -432,6 +434,30 @@ func (p *Parser) Parse() (Node, error) {
 			return Quote{
 				Structure: children[1],
 			}, nil
+		}
+
+		if len(children) > 0 && children[0] == or_id {
+			// want to translate to (if arg0 #t (if arg1 #t (... #f) ))
+
+			var p Node = Boolean{false}
+
+			for i := len(children) - 1; i >= 1; i-- {
+				p = If{children[i], Boolean{true}, p}
+			}
+
+			return p, nil
+		}
+
+		if len(children) > 0 && children[0] == and_id {
+			// want to translate to (if arg0 (if arg1 (... #t) #f) #f)
+
+			var p Node = Boolean{true}
+
+			for i := len(children) - 1; i >= 1; i-- {
+				p = If{children[i], p, Boolean{false}}
+			}
+
+			return p, nil
 		}
 
 		return SExp{children}, nil
