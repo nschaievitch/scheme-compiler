@@ -1,6 +1,5 @@
 use std::{
-    io::{self, Read},
-    u64,
+    io::{self, Read}, u64
 };
 
 use eyre::{Result, eyre};
@@ -48,9 +47,17 @@ pub enum Op {
     FUNCALL,
     LOAD_CLOSURE_VAR,
     SLIDE,
+    TAILCALL,
+    LOAD_VAR_DEFER,
+    SET_DEFERRED,
+    PUSH_NIL,
+    CONSTANT_INIT,
+    CONSTANT_REF,
+    UNPACK_LIST
 }
 
-const HEAP_SIZE: usize = 2 << 10;
+const HEAP_SIZE: usize = 1 << 10;
+const DEBUG_MAX_STACK_SIZE: usize = 1 << 12;
 
 const FIXNUM_MASK: u64 = 0b11;
 const FIXNUM_TAG: u64 = 0b00;
@@ -70,6 +77,9 @@ const PAIR_TAG: u64 = 0b001;
 const VECTOR_TAG: u64 = 0b010;
 const STRING_TAG: u64 = 0b011;
 const CLOSURE_TAG: u64 = 0b110;
+const FORMAL_TAG: u64 = 0b101;
+
+const NIL_VAL: u64 = 0b111;
 
 fn read_op(opcode: u64) -> Result<Op> {
     if opcode == 0 {
@@ -94,6 +104,7 @@ define_tag_checker!(check_boxed_pair_pointer, POINTER_MASK, PAIR_TAG);
 define_tag_checker!(check_boxed_vector_pointer, POINTER_MASK, VECTOR_TAG);
 define_tag_checker!(check_boxed_string_pointer, POINTER_MASK, STRING_TAG);
 define_tag_checker!(check_boxed_closure_pointer, POINTER_MASK, CLOSURE_TAG);
+define_tag_checker!(check_boxed_formal, POINTER_MASK, FORMAL_TAG);
 
 fn read_boxed_number(boxed_num: u64) -> Result<u64> {
     Ok(boxed_num >> FIXNUM_SHIFT)
@@ -155,6 +166,11 @@ fn box_string(string_pointer: usize) -> u64 {
 fn box_closure(closure_pointer: usize) -> u64 {
     let u: u64 = closure_pointer.try_into().unwrap();
     (u << POINTER_SHIFT) | CLOSURE_TAG
+}
+
+fn box_formal(formal_offset: usize) -> u64 {
+    let u: u64 = formal_offset.try_into().unwrap();
+    (u << POINTER_SHIFT) | FORMAL_TAG
 }
 
 fn print_boxed(boxed: u64, heap: &[u64]) -> Result<String> {
@@ -233,6 +249,10 @@ fn print_boxed(boxed: u64, heap: &[u64]) -> Result<String> {
         return Ok(format!("<closure over label {}>", p));
     }
 
+    if boxed == NIL_VAL {
+        return Ok("'()".to_owned());
+    }
+
     Err(eyre!("Invalid tagged value {}", boxed))
 }
 
@@ -250,9 +270,13 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
     let mut pc: usize = 0;
     let mut stack: Vec<u64> = Vec::new();
     let mut control_stack: Vec<usize> = Vec::new();
+    let mut constants: Vec<u64> = Vec::new(); // stores boxed pointers to quote constants
+
     // let mut heap: Box<[u64; HEAP_SIZE]> = Box::new([0; HEAP_SIZE]);
     let mut heap_pointer: usize = 0;
     let mut stack_base_pointer: usize = 0;
+
+    let mut current_closure: usize = 0;
 
     // first word should point to main function
     let main_pos: usize = readword(&code, &mut pc)?.try_into()?;
@@ -261,6 +285,9 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
     loop {
         let instr = read_op(readword(&code, &mut pc)?)?;
         dbg!(&instr, &pc, &code[pc - 1]);
+
+        debug_assert!(stack.len() <= DEBUG_MAX_STACK_SIZE, "stack overflow");
+
         match instr {
             Op::LOAD64 => {
                 let boxed_num = readword(&code, &mut pc)?;
@@ -290,7 +317,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
             }
 
             Op::RETURN => {
-                // dbg!(&control_stack);
+                dbg!(&control_stack);
 
                 if control_stack.len() > 0
                     && check_boxed_closure_pointer(
@@ -304,7 +331,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
                 dbg!(print_boxed(val.clone(), &heap[..])?);
 
-                if stack_base_pointer == 0 {
+                if control_stack.is_empty() {
                     dbg!(&stack);
                     dbg!(&heap[..10]);
                     return Ok(val);
@@ -313,6 +340,14 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 let new_pc: usize = control_stack
                     .pop()
                     .ok_or(eyre!("Tried to pop pc from empty control stack"))?;
+
+                let caller_closure_boxed: usize = control_stack.pop().ok_or(eyre!(
+                    "Tried to pop caller closure from empty control stack"
+                ))?;
+
+                if check_boxed_closure_pointer(caller_closure_boxed.try_into()?) {
+                    current_closure = read_boxed_pointer(caller_closure_boxed.try_into()?)?;
+                }
 
                 let new_bp: usize = control_stack
                     .pop()
@@ -389,7 +424,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                     .pop()
                     .ok_or(eyre!("Unexpected call to null? without arguments"))?;
 
-                if val == 0 {
+                if val == NIL_VAL {
                     stack.push(box_boolean(true));
                 } else {
                     stack.push(box_boolean(false));
@@ -879,6 +914,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 }
 
                 let pointer = read_boxed_pointer(string_pointer)?;
+                dbg!(&pointer);
                 let string_len = heap[pointer];
 
                 let string_position = read_boxed_number(string_position_boxed)?;
@@ -937,6 +973,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
                 let new_char = read_boxed_character(new_char_boxed)?;
 
+                dbg!(&heap[..4], &string_position, &new_char, &pointer);
                 if string_position >= string_len {
                     return Err(eyre!(
                         "Attempted to read out of string bounds: position {string_position} in string of length {string_len}"
@@ -946,15 +983,16 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 let string_position_u: usize = string_position.try_into()?;
                 let pos_word: usize = string_position_u / 8;
 
-                let word = heap[pos_word + 1];
+                let word = heap[pointer + pos_word + 1];
 
                 let mut word_bytes = word.to_le_bytes();
 
                 word_bytes[string_position_u % 8] = new_char;
 
-                heap[pos_word + 1] = u64::from_le_bytes(word_bytes);
+                heap[pointer + pos_word + 1] = u64::from_le_bytes(word_bytes);
 
                 stack.push(string_pointer);
+                dbg!(&heap[..4]);
             }
 
             Op::STRING_APPEND => {
@@ -1034,6 +1072,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 stack_base_pointer = control_stack
                     .pop()
                     .ok_or(eyre!("labelcall with empty control stack"))?;
+                control_stack.push(0); // no caller closure to restore
                 control_stack.push(pc + 1);
 
                 let label_add: usize = readword(&code, &mut pc)?.try_into()?;
@@ -1048,6 +1087,9 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 heap[heap_pointer] = label_add;
 
                 let args_len: usize = readword(&code, &mut pc)?.try_into()?;
+                let arg_indicator = readword(&code, &mut pc)?;
+
+                heap[heap_pointer + 1] = arg_indicator;
 
                 if stack.len() < args_len {
                     return Err(eyre!(
@@ -1056,19 +1098,32 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 }
 
                 for i in 1..=args_len {
-                    heap[heap_pointer + i] = stack
+                    let val = stack
                         .pop()
                         .ok_or(eyre!("Error popping from stack to create closure"))?;
+
+                    if check_boxed_formal(val) {
+                        control_stack.push(heap_pointer + i + 1);
+                    }
+
+                    heap[heap_pointer + i + 1] = val;
                 }
 
                 stack.push(box_closure(heap_pointer));
-                heap_pointer += args_len + 1;
+                heap_pointer += args_len + 2;
             }
 
             Op::FUNCALL => {
+                let n_args_boxed = stack
+                    .pop()
+                    .ok_or(eyre!("Expected arg count on stack for funcall"))?;
+                let n_args: usize = read_boxed_number(n_args_boxed)?.try_into()?;
+                
                 stack_base_pointer = control_stack
                     .pop()
                     .ok_or(eyre!("funcall with empty control stack"))?;
+                
+                control_stack.push(box_closure(current_closure).try_into()?);
                 control_stack.push(pc);
 
                 let boxed_closure_pointer = stack
@@ -1080,33 +1135,58 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                     return Err(eyre!("Invalid closure pointer {}", boxed_closure_pointer));
                 }
 
+                
                 control_stack.push(boxed_closure_pointer.try_into()?);
+                current_closure = read_boxed_pointer(boxed_closure_pointer)?;
 
-                let closure_pointer = read_boxed_pointer(boxed_closure_pointer)?;
+                let arg_indicator: usize = heap[current_closure + 1].try_into()?;
 
-                let label_add: usize = heap[closure_pointer].try_into()?;
+                // is variadic
+                if arg_indicator & 1 == 1 {
+                    let arg_count = arg_indicator >> 1;
+                    let have_to_collect = n_args - arg_count + 1;
+                    let skip = arg_count - 1; // required params to keep
+
+                    let mut required = Vec::with_capacity(skip);
+                    for _ in 0..skip {
+                        required.push(stack.pop().ok_or(eyre!("Stack underflow collecting variadic args"))?);
+                    }
+
+                    let mut rest_vals = Vec::with_capacity(have_to_collect);
+                    for _ in 0..have_to_collect {
+                        rest_vals.push(stack.pop().ok_or(eyre!("Stack underflow collecting variadic args"))?);
+                    }
+
+                    let mut rest = NIL_VAL;
+                    for &val in rest_vals.iter().rev() {
+                        heap[heap_pointer] = val;
+                        heap[heap_pointer + 1] = rest;
+                        rest = box_pair(heap_pointer);
+                        heap_pointer += 2;
+                    }
+
+                    // Rest list at base+0, then required args above
+                    stack.push(rest);
+                    for &val in required.iter() {
+                        stack.push(val);
+                    }
+                }
+
+                let label_add: usize = heap[current_closure].try_into()?;
                 let jump_pos: usize = code[label_add].try_into()?;
 
-                dbg!(&stack, &jump_pos, &label_add, &code);
+                dbg!(&stack, &jump_pos, &label_add);
                 pc = jump_pos;
             }
 
             Op::LOAD_CLOSURE_VAR => {
-                let closure_pointer = read_boxed_pointer(
-                    control_stack
-                        .last()
-                        .ok_or(eyre!(
-                            "Tried to load closure variable with empty control stack"
-                        ))?
-                        .clone()
-                        .try_into()?,
-                )?;
+                let closure_pointer = current_closure;
 
                 let var_index: usize = readword(&code, &mut pc)?.try_into()?;
 
-                let val = heap[closure_pointer + var_index + 1];
+                let val = heap[closure_pointer + var_index + 2];
 
-                stack.push(val.clone())
+                stack.push(val)
             }
 
             Op::SLIDE => {
@@ -1118,6 +1198,156 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 stack.truncate(stack.len() - n);
                 stack.push(val);
             }
+
+            Op::TAILCALL => {
+                // Discard the 2 values SETUP_STACK_BASE pushed onto control_stack
+                control_stack.pop();
+                control_stack.pop();
+
+                let n_args_boxed = stack
+                    .pop()
+                    .ok_or(eyre!("Expected arg count on stack for tailcall"))?;
+                let n_args: usize = read_boxed_number(n_args_boxed)?.try_into()?;
+                let start = stack.len() - (n_args + 1);
+
+                stack.copy_within(start.., stack_base_pointer);
+
+                stack.truncate(stack_base_pointer + n_args + 1);
+
+                let boxed_closure_pointer = stack
+                    .pop()
+                    .ok_or(eyre!("Tried to funcall with no closure on stack"))?;
+
+                if !check_boxed_closure_pointer(boxed_closure_pointer) {
+                    dbg!(&stack);
+                    return Err(eyre!("Invalid closure pointer {}", boxed_closure_pointer));
+                }
+
+                current_closure = read_boxed_pointer(boxed_closure_pointer)?;
+
+                let arg_indicator: usize = heap[current_closure + 1].try_into()?;
+
+                // is variadic
+                if arg_indicator & 1 == 1 {
+                    let arg_count = arg_indicator >> 1;
+                    let have_to_collect = n_args - arg_count + 1;
+                    let skip = arg_count - 1; // required params to keep
+
+                    let mut required = Vec::with_capacity(skip);
+                    for _ in 0..skip {
+                        required.push(stack.pop().ok_or(eyre!("Stack underflow collecting variadic args"))?);
+                    }
+
+                    let mut rest_vals = Vec::with_capacity(have_to_collect);
+                    for _ in 0..have_to_collect {
+                        rest_vals.push(stack.pop().ok_or(eyre!("Stack underflow collecting variadic args"))?);
+                    }
+
+                    let mut rest = NIL_VAL;
+                    for &val in rest_vals.iter().rev() {
+                        heap[heap_pointer] = val;
+                        heap[heap_pointer + 1] = rest;
+                        rest = box_pair(heap_pointer);
+                        heap_pointer += 2;
+                    }
+
+                    // Rest list at base+0, then required args above
+                    stack.push(rest);
+                    for &val in required.iter() {
+                        stack.push(val);
+                    }
+                }
+
+                let label_add: usize = heap[current_closure].try_into()?;
+                let jump_pos: usize = code[label_add].try_into()?;
+
+                dbg!(&stack, &jump_pos, &label_add);
+                pc = jump_pos;
+            }
+
+            Op::LOAD_VAR_DEFER => {
+                let var_offset: usize = readword(&code, &mut pc)?.try_into()?;
+                let boxed = box_formal(var_offset);
+                stack.push(boxed);
+            }
+
+            Op::SET_DEFERRED => {
+                let n = readword(&code, &mut pc)?;
+
+                dbg!(&n, &control_stack, &heap[..10]);
+                for _i in 0..n {
+                    let idx = control_stack
+                        .pop()
+                        .ok_or(eyre!("Tried to pop from empty control stack"))?;
+                    let offset = read_boxed_pointer(heap[idx])?;
+
+                    heap[idx] = *(stack.get(offset + stack_base_pointer)
+                    .ok_or(eyre!("Invalid variable load from bad position, tried to grab position {} from stack of length {}", idx + stack_base_pointer, stack.len()))?);
+                }
+                dbg!(&heap[..10]);
+            }
+
+            Op::PUSH_NIL => {
+                stack.push(NIL_VAL);
+            }
+
+            Op::CONSTANT_INIT => {
+                let boxed_pointer = stack
+                    .pop()
+                    .ok_or(eyre!("Error popping from stack to init constant"))?;
+
+                constants.push(boxed_pointer);
+            }
+
+            Op::CONSTANT_REF => {
+                let idx: usize = readword(&code, &mut pc)?.try_into()?;
+
+                if idx >= constants.len() {
+                    return Err(eyre!("Tried to reference constant with index bigger than the amount of constants"))
+                }
+
+                let constant = constants[idx];
+
+                stack.push(constant)
+            }
+
+            Op::UNPACK_LIST => {
+                let boxed_pointer = stack
+                    .pop()
+                    .ok_or(eyre!("Error popping from stack to get apply method"))?;
+
+                if !check_boxed_closure_pointer(boxed_pointer) {
+                    return Err(eyre!("Tried to call apply with a non-method"));
+                }
+
+                let mut boxed_list = stack
+                    .pop()
+                    .ok_or(eyre!("Error popping from stack to get apply list"))?;
+
+                if !check_boxed_pair_pointer(boxed_list) {
+                    return Err(eyre!("Tried to call apply with a non-list"));
+                }
+
+                let mut args = Vec::new();
+
+                while boxed_list != NIL_VAL {
+                    let pointer = read_boxed_pointer(boxed_list)?;
+                    let car = heap[pointer];
+
+                    args.push(car);
+                    boxed_list = heap[pointer + 1];
+                }
+
+                let args_count = box_number(args.len().try_into()?)?;
+
+                args.iter().rev().for_each(|a| {
+                    stack.push(a.clone());
+                });
+
+                stack.push(boxed_pointer);
+                stack.push(args_count);
+            }
+
         }
     }
 }

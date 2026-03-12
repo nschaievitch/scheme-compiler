@@ -68,6 +68,7 @@ func (p *Parser) ParseSExp() ([]Node, error) {
 		}
 
 		children = append(children, node)
+		p.SkipWhitespace()
 	}
 
 	if p.Peek() == 0 {
@@ -119,13 +120,32 @@ func (p *Parser) Parse() (Node, error) {
 	c := p.Peek()
 	switch c {
 	case 0:
-		return nil, fmt.Errorf("Unexpected end of input\n")
+		return nil, nil
+	case ')':
+		return nil, fmt.Errorf("Unexpected closing paren at position %d", p.Pos)
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		num, e := p.ParseNumber()
 		return Uint{num}, e
 	case '"':
 		characters, e := p.ParseString()
 		return String{characters}, e
+	case '\'': //TODO: add quote forms
+		p.Pos += 1
+
+		if p.Peek() != '(' {
+			return nil, fmt.Errorf("Unexpected character after ': %c\n", p.Peek())
+		}
+
+		p.Pos += 1
+
+		if p.Peek() != ')' {
+			return nil, fmt.Errorf("Not implemented: only nil quote forms are currently supported")
+		}
+
+		p.Pos += 1
+
+		return Identifier{"'()"}, nil
+
 	case '#':
 		p.Pos += 1
 		switch p.Peek() {
@@ -157,6 +177,7 @@ func (p *Parser) Parse() (Node, error) {
 		}
 
 		let_id := Identifier{"let"}
+		letrec_id := Identifier{"letrec"}
 		if_id := Identifier{"if"}
 		vector_id := Identifier{"vector"}
 		string_id := Identifier{"string"}
@@ -165,12 +186,16 @@ func (p *Parser) Parse() (Node, error) {
 		code_id := Identifier{"code"}
 		closure_id := Identifier{"closure"}
 		lambda_id := Identifier{"lambda"}
+		quote_id := Identifier{"quote"}
+		letstar_id := Identifier{"let*"}
+		or_id := Identifier{"or"}
+		and_id := Identifier{"and"}
 
 		// test if SExp is another binding
 
-		if len(children) > 0 && children[0] == let_id {
+		if len(children) > 0 && (children[0] == let_id || children[0] == letrec_id || children[0] == letstar_id) {
 			if len(children) != 3 {
-				return nil, fmt.Errorf("Invalid let form, must have three children %s", p.Source[p.Pos:])
+				return nil, fmt.Errorf("Invalid let form, must have three children %+v, %d", children, len(children))
 			}
 
 			bindings := []Binding{}
@@ -202,7 +227,22 @@ func (p *Parser) Parse() (Node, error) {
 				}
 			}
 
-			return Let{bindings, children[len(children)-1]}, nil
+			if children[0] == letstar_id {
+				var p Node = children[len(children)-1]
+
+				for i := len(bindings) - 1; i >= 0; i-- {
+					b := bindings[i]
+					p = Let{[]Binding{b}, p}
+				}
+
+				return p, nil
+			}
+
+			if children[0] == let_id {
+				return Let{bindings, children[len(children)-1]}, nil
+			} else {
+				return LetRec{bindings, children[len(children)-1]}, nil
+			}
 		}
 
 		if len(children) == 4 && children[0] == if_id {
@@ -334,27 +374,90 @@ func (p *Parser) Parse() (Node, error) {
 
 			varsExp, ok := children[1].(SExp)
 
-			if !ok {
-				return nil, fmt.Errorf("Invalid variables for code expression")
-			}
+			if ok {
 
-			vars := make([]Identifier, 0)
+				vars := make([]Identifier, 0)
+				var rest *Identifier = nil
 
-			for _, v := range varsExp.Children {
-				id, ok := v.(Identifier)
+				for i, v := range varsExp.Children {
+					id, ok := v.(Identifier)
 
-				if !ok {
-					return nil, fmt.Errorf("Invalid variable %v for lambda expression", v)
+					if !ok {
+						return nil, fmt.Errorf("Invalid variable %v for lambda expression", v)
+					}
+
+					if id.Name == "." {
+						if i != len(varsExp.Children)-2 {
+							return nil, fmt.Errorf("Invalid variadic lambda, . should be in second to last position")
+						}
+
+						rest_i, ok := varsExp.Children[len(varsExp.Children)-1].(Identifier)
+
+						if !ok {
+							return nil, fmt.Errorf("Invalid variadic parameter; should be identifier")
+						}
+
+						rest = &rest_i
+						break
+
+					} else {
+						vars = append(vars, id)
+					}
 				}
+				return Lambda{
+					Args:    vars,
+					Code:    children[2],
+					RestArg: rest,
+				}, nil
 
-				vars = append(vars, id)
 			}
 
-			return Lambda{
-				Args: vars,
-				Code: children[2],
-			}, nil
+			varExp, ok := children[1].(Identifier)
 
+			if ok {
+				rest := &varExp
+				return Lambda{
+					Args:    []Identifier{},
+					Code:    children[2],
+					RestArg: rest,
+				}, nil
+			}
+
+			return nil, fmt.Errorf("Invalid variables for code expression")
+		}
+
+		if len(children) > 0 && children[0] == quote_id {
+			if len(children) != 2 {
+				return nil, fmt.Errorf("Quote form must have exactly one child")
+			}
+
+			return Quote{
+				Structure: children[1],
+			}, nil
+		}
+
+		if len(children) > 0 && children[0] == or_id {
+			// want to translate to (if arg0 #t (if arg1 #t (... #f) ))
+
+			var p Node = Boolean{false}
+
+			for i := len(children) - 1; i >= 1; i-- {
+				p = If{children[i], Boolean{true}, p}
+			}
+
+			return p, nil
+		}
+
+		if len(children) > 0 && children[0] == and_id {
+			// want to translate to (if arg0 (if arg1 (... #t) #f) #f)
+
+			var p Node = Boolean{true}
+
+			for i := len(children) - 1; i >= 1; i-- {
+				p = If{children[i], p, Boolean{false}}
+			}
+
+			return p, nil
 		}
 
 		return SExp{children}, nil
@@ -379,5 +482,31 @@ func MakeParser(source string) Parser {
 
 func SchemeParse(source string) (Node, error) {
 	p := MakeParser(source)
-	return p.Parse()
+
+	program, err := p.Parse()
+
+	if err != nil {
+		return nil, err
+	}
+
+	stmts := make([]Node, 1)
+	stmts[0] = program
+
+	for p.Pos < len(source) {
+		program, err = p.Parse()
+
+		if err != nil {
+			return nil, err
+		}
+
+		if program != nil {
+			stmts = append(stmts, program)
+		}
+	}
+
+	if len(stmts) == 1 {
+		return stmts[0], nil
+	}
+
+	return Begin{stmts}, nil
 }

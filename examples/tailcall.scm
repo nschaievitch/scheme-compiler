@@ -1,0 +1,1 @@
+(letrec ((tri (lambda (n acc) (if (= n 0) acc (tri (- n 1) (+ acc n)))))) (tri 1000 0))

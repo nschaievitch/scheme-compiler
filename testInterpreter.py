@@ -21,6 +21,9 @@ def testCase(source, expected):
     )
 
     if comp.returncode != 0:
+        if expected == ERROR:
+            return True
+
         print(f"{RED}Error compiling {source}: {comp.stderr.decode('utf-8')}{RESET}")
         return False
 
@@ -137,8 +140,8 @@ testSuites = {
         ("(car (cons 1 2))", 1),
         ("(cdr (cons 1 2))", 2),
         ("(cdr (car (cons (cons 1 2) 3)))", 2),
-        ("(let ((pair (cons 10 20))) (car pair)))", 10),
-        ("(let ((pair (cons 10 (cons 20 30)))) (car (cdr pair))))", 20),
+        ("(let ((pair (cons 10 20))) (car pair))", 10),
+        ("(let ((pair (cons 10 (cons 20 30)))) (car (cdr pair)))", 20),
     ],
     "Vector operations": [
         ("(vector-ref (vector 1 2 3) 1)", 2),
@@ -221,7 +224,98 @@ testSuites = {
            ("(let ((b 2)) (let ((a (lambda (y) (cons (let ((z 11)) (lambda () (+ y z))) (lambda (a) (- a b)))))) ((car (a 50)))))", 61),
            ("(let ((b 2)) (let ((a (lambda (y) (cons (let ((z 11)) (lambda () (+ y z))) (lambda (a) (- a b)))))) ((cdr (a 50)) 10)))", 8),
 
-        ]
+        ],
+    "letrec":
+    [
+        ("(letrec ((fact (lambda (x) (if (= x 0) 1 (* x (fact (- x 1))))))) (fact 5))", 120),
+        ("(letrec ((even? (lambda (n) (if (= n 0) #t (odd? (- n 1))))) (odd? (lambda (n) (if (= n 0) #f (even? (- n 1)))))) (even? 4))", "#t"),
+        ("(letrec ((even? (lambda (n) (if (= n 0) #t (odd? (- n 1))))) (odd? (lambda (n) (if (= n 0) #f (even? (- n 1)))))) (odd? 7))", "#t"),
+        ("(letrec ((even? (lambda (n) (if (= n 0) #t (odd? (- n 1))))) (odd? (lambda (n) (if (= n 0) #f (even? (- n 1)))))) (even? 5))", "#f"),
+        ("(letrec ((even? (lambda (n) (if (= n 0) #t (odd? (- n 1))))) (odd? (lambda (n) (if (= n 0) #f (even? (- n 1)))))) (odd? 6))", "#f"),
+    ],
+    "tailcall":
+    [
+        ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (funcall tri (- n 1) (+ acc n)))))) (tri 1000 0))", ERROR),
+        ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (tailcall tri (- n 1) (+ acc n)))))) (tri 1000 0))", 500500),
+        (
+            "(letrec ((even-sum (lambda (n acc) (if (= n 0) acc (odd-sum (- n 1) (+ acc n))))) (odd-sum (lambda (n acc) (if (= n 0) acc (even-sum (- n 1) (+ acc n)))))) (even-sum 1000 0))",
+            500500,
+        ),
+        (
+            "(letrec ((even-sum (lambda (n acc) (if (= n 0) acc (tailcall odd-sum (- n 1) (+ acc n))))) (odd-sum (lambda (n acc) (if (= n 0) acc (tailcall even-sum (- n 1) (+ acc n)))))) (even-sum 1000 0))",
+            500500,
+        ),
+        ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (tailcall tri (- n 1) (+ acc n)))))) (tri 4 0))", 10),
+        ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (tri (- n 1) (+ acc n)))))) (tri 4 0))", 10),
+        ("(letrec ((countdown (lambda (n) (if (= n 0) 0 (countdown (- n 1)))))) (countdown 10000))", 0)
+    ],
+    "stdlib": [
+        ("(map (lambda (x) (* 2 x)) (cons 1 (cons 2 (cons 3 '()))))", "(2 . (4 . (6 . '())))"),
+        ("(foldl + 0 (cons 1 (cons 2 (cons 3 (cons 4 '())))))", 10),
+        ("(foldl cons '() (cons 1 (cons 2 (cons 3 (cons 4 '())))))", "(4 . (3 . (2 . (1 . '()))))"), 
+        ("(foldr + 0 (cons 1 (cons 2 (cons 3 (cons 4 '())))))", 10),
+        ("(foldr cons '() (cons 1 (cons 2 (cons 3 (cons 4 '())))))", "(1 . (2 . (3 . (4 . '()))))"), 
+        ("(modulo 17 4)", 1),
+        ("(modulo 16 4)", 0),
+        ("(modulo 1201 3)", 1),
+        ("(filter (lambda (x) (< x 10)) (list 1 2 10 3 20 4 30 5))", "(1 . (2 . (3 . (4 . (5 . '())))))")
+    ],
+    "quotes": [
+        ("(let ((a (quote (cons 1 2))) (b (quote (cons 1 2)))) (eq? a b))", "#t"),
+        ("(quote (cons 1 2))", "(1 . 2)"),
+        ("(car (quote (cons 10 20)))", 10),
+        ("(cdr (quote (cons 10 20)))", 20),
+        ("(let ((a (quote (vector 1 2 3)))) (vector-ref a 1))", 2),
+        ("(let ((a (quote (cons 1 (cons 2 (cons 3 '())))))) (car (cdr a)))", 2),
+        ("(let ((a (quote (cons 1 2))) (b (quote (cons 3 4)))) (+ (car a) (car b)))", 4),
+        ("(let ((a (quote (vector 1 2 3))) (b (quote (vector 1 2 3)))) (eq? a b))", "#t"),
+        ("(let ((a (quote (cons 1 2))) (b (quote (cons 1 2))) (c (quote (cons 1 2)))) (if (eq? a b) (eq? b c) #f))", "#t"),
+        ("(let ((a (quote (cons 1 2))) (b (quote (cons 3 4)))) (eq? a b))", "#f"),
+        ('(let ((a (quote "hi")) (b (quote "hi"))) (eq? a b))', "#t"),
+        ('(let ((a (quote "hi")) (b (quote "bye"))) (eq? a b))', "#f"),
+        ('(let ((a (quote (cons "ok" 1))) (b (quote (cons "ok" 1)))) (eq? a b))', "#t"),
+    ],
+    "variadic": [
+        ("((lambda (a . b) (cons a (car (cdr b)))) 1 2 3)", "(1 . 3)"), 
+        ("(list 1 2 3 4)", "(1 . (2 . (3 . (4 . '()))))")
+    ],
+    "apply": [
+        ("(let ((compose (lambda (f g) (lambda args (f (apply g args)))))) ((compose add1 -) 20 10))", 11),
+        ("(apply add1 (cons 41 '()))", 42),
+        ("(apply + (cons 20 (cons 22 '())))", 42),
+    ],
+    "define": [
+        ("(define a 10) a", 10),
+        ("(define a 10) (define b 20) (cons a b)", "(10 . 20)"),
+        ("(define a b) (define b 20) a", ERROR),
+        ("(define a 10) (define b (* 2 a)) b", 20)
+    ],
+    "let*": [
+        ("(let* ((a 10) (b (* 2 a))) b)", 20),
+        ("(let* ((a b) (b 10)) a)", ERROR),
+        ("(let* ((a 10) (b (* 2 a)) (c (- b 5))) c)", 15)
+    ],
+    "boolean ops and shortcircuitting": [
+        ("(or #t #t)", "#t"),
+        ("(or #t #f)", "#t"),
+        ("(or #f #t)", "#t"),
+        ("(or #f #f)", "#f"),
+        ("(define v (vector 1)) (or #t (vector-set! v 0 2)) (vector-ref v 0)", "1"),
+        ("(define v (vector 1)) (or #f (vector-set! v 0 2)) (vector-ref v 0)", "2"),
+        ("(define v (vector 1)) (or #f #t (vector-set! v 0 2)) (vector-ref v 0)", "1"),
+        ("(and #t #t)", "#t"),
+        ("(and #t #f)", "#f"),
+        ("(and #f #t)", "#f"),
+        ("(and #f #f)", "#f"),
+        ("(define v (vector 1)) (and #f (vector-set! v 0 2)) (vector-ref v 0)", "1"),
+        ("(define v (vector 1)) (and #t (vector-set! v 0 2)) (vector-ref v 0)", "2"),
+        ("(define v (vector 1)) (and #t #f (vector-set! v 0 2)) (vector-ref v 0)", "1"),
+    ],
+    "alpha conversion": [
+        ("(define a 10) (set! a 20) a", 20),
+        ("(let ((a 20)) (begin (set! a 10) a))", 10),
+        ("(let ((f (lambda (c) (cons (lambda (v) (set! c v)) (lambda () c))))) (let ((p (f 0))) (begin ((car p) 12) ((cdr p)))))", 12)
+    ]
 }
 
 passed = 0

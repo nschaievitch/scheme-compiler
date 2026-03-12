@@ -1,0 +1,15 @@
+(letrec ((map (lambda (f l) 
+            (if (null? l) '()
+                (cons (f (car l)) (map f (cdr l))))))
+         (foldl (lambda (f init l)
+            (if (null? l)
+                 init
+                 (foldl f (f (car l) init) (cdr l)))))
+         (foldr (lambda (f init l)
+            (if (null? l)
+                init
+                (f (car l) (foldr f init (cdr l))))))
+         (list (lambda args args))
+         (modulo (lambda (a b) (if (< a b) a (modulo (- a b) b))))
+         (filter (lambda (f l) (foldr (lambda (a b) (if (f a) (cons a b) b)) '() l))))                
+        (main))
