@@ -1334,6 +1334,213 @@ func AddStdlib(program Node) (Node, error) {
 	}, Lambda{[]Identifier{}, nil, program}}}, stdlib_letrec.Bindings...), stdlib_letrec.Body}, nil
 }
 
+func alphaConvert(p Node, convert *map[Identifier]bool) (Node, error) {
+	switch v := p.(type) {
+	case SExp:
+		children := make([]Node, len(v.Children))
+
+		id, ok := v.Children[0].(Identifier)
+
+		if ok && id.Name == "set!" {
+			id_2, ok_2 := v.Children[1].(Identifier)
+
+			if !ok_2 {
+				return nil, fmt.Errorf("Tried to set! a non-identifier")
+			}
+
+			(*convert)[id_2] = true
+
+			return SExp{[]Node{
+				Identifier{"vector-set!"},
+				id_2,
+				Uint{0},
+				v.Children[2],
+			}}, nil
+		}
+
+		for i, c := range v.Children {
+			nc, err := alphaConvert(c, convert)
+			if err != nil {
+				return nil, err
+			}
+			children[i] = nc
+		}
+
+		return SExp{children}, nil
+	case Let:
+		binds := make([]Binding, len(v.Bindings))
+
+		for i, b := range v.Bindings {
+			nv, err := alphaConvert(b.Value, convert)
+
+			if err != nil {
+				return nil, err
+			}
+
+			binds[i] = Binding{b.Identifier, nv}
+		}
+
+		// first pass just gets convert
+		_, err := alphaConvert(v.Body, convert)
+
+		if err != nil {
+			return nil, err
+		}
+
+		// second pass modifies
+		body, err := alphaConvert(v.Body, convert)
+
+		// get proper bindings:
+
+		for i, b := range binds {
+			bo, ok := (*convert)[b.Identifier]
+
+			if ok && bo {
+				binds[i] = Binding{b.Identifier, Vector{[]Node{b.Value}}}
+				(*convert)[b.Identifier] = false
+			}
+		}
+
+		return Let{binds, body}, nil
+	case LetRec:
+		binds := make([]Binding, len(v.Bindings))
+
+		for i, b := range v.Bindings {
+			nv, err := alphaConvert(b.Value, convert)
+
+			if err != nil {
+				return nil, err
+			}
+
+			binds[i] = Binding{b.Identifier, nv}
+		}
+
+		// first pass just gets convert
+		_, err := alphaConvert(v.Body, convert)
+
+		if err != nil {
+			return nil, err
+		}
+
+		// second pass modifies
+		body, err := alphaConvert(v.Body, convert)
+
+		// get proper bindings:
+
+		for i, b := range binds {
+			bo, ok := (*convert)[b.Identifier]
+
+			if ok && bo {
+				binds[i] = Binding{b.Identifier, Vector{[]Node{b.Value}}}
+				(*convert)[b.Identifier] = false
+			}
+		}
+
+		return LetRec{binds, body}, nil
+
+	case If:
+		cond, err := alphaConvert(v.Condition, convert)
+
+		if err != nil {
+			return nil, err
+		}
+
+		cons, err := alphaConvert(v.Consequent, convert)
+
+		if err != nil {
+			return nil, err
+		}
+
+		alt, err := alphaConvert(v.Alternative, convert)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return If{cond, cons, alt}, nil
+	case Lambda:
+		// first pass just gets convert
+		_, err := alphaConvert(v.Code, convert)
+
+		if err != nil {
+			return nil, err
+		}
+
+		// second pass modifies
+		code, err := alphaConvert(v.Code, convert)
+
+		if err != nil {
+			return nil, err
+		}
+
+		args := make([]Identifier, len(v.Args))
+
+		var p Node = code
+
+		for i, arg := range v.Args {
+			bo, ok := (*convert)[arg]
+
+			if ok && bo {
+				name := fmt.Sprintf("__a%s", arg.Name)
+
+				p = Let{[]Binding{{arg, Vector{[]Node{Identifier{name}}}}}, p}
+
+				args[i] = Identifier{name}
+
+			} else {
+				args[i] = arg
+			}
+
+		}
+
+		return Lambda{args, v.RestArg, p}, nil
+	case Begin:
+		children := make([]Node, len(v.Children))
+
+		for i, c := range v.Children {
+			nc, err := alphaConvert(c, convert)
+
+			if err != nil {
+				return nil, err
+			}
+
+			children[i] = nc
+		}
+
+		return Begin{children}, nil
+	case Vector:
+		children := make([]Node, len(v.Children))
+
+		for i, c := range v.Children {
+			nc, err := alphaConvert(c, convert)
+
+			if err != nil {
+				return nil, err
+			}
+
+			children[i] = nc
+		}
+
+		return Vector{children}, nil
+	case Identifier:
+		b, ok := (*convert)[v]
+
+		if ok && b {
+			return SExp{[]Node{Identifier{"vector-ref"}, v, Uint{0}}}, nil
+		}
+	default:
+		return p, nil
+	}
+
+	return p, nil
+}
+
+func AlphaConversion(p Node) (Node, error) {
+	convert := make(map[Identifier]bool)
+
+	return alphaConvert(p, &convert)
+}
+
 func (c *Compiler) Emit(w Word) {
 	c.Code = append(c.Code, w)
 }
@@ -1401,7 +1608,11 @@ func main() {
 
 	expandedProgram := EtaExpandBuiltins(linkedProgram)
 
-	liftedProgram, err := LiftLambdas(expandedProgram)
+	check(err)
+
+	alphaConverted, err := AlphaConversion(expandedProgram)
+
+	liftedProgram, err := LiftLambdas(alphaConverted)
 
 	check(err)
 

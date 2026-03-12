@@ -306,6 +306,11 @@ testSuites = {
         ("(define v (vector 1)) (and #f (vector-set! v 0 2)) (vector-ref v 0)", "1"),
         ("(define v (vector 1)) (and #t (vector-set! v 0 2)) (vector-ref v 0)", "2"),
         ("(define v (vector 1)) (and #t #f (vector-set! v 0 2)) (vector-ref v 0)", "1"),
+    ],
+    "alpha conversion": [
+        ("(define a 10) (set! a 20) a", 20),
+        ("(let ((a 20)) (begin (set! a 10) a))", 10),
+        ("(let ((f (lambda (c) (cons (lambda (v) (set! c v)) (lambda () c))))) (let ((p (f 0))) (begin ((car p) 12) ((cdr p)))))", 12)
     ]
 }
 
