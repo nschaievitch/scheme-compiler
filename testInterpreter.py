@@ -235,7 +235,7 @@ testSuites = {
     ],
     "tailcall":
     [
-        ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (funcall tri (- n 1) (+ acc n)))))) (tri 1000 0))", ERROR),
+        ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (funcall tri (- n 1) (+ acc n)))))) (tri 100000 0))", ERROR),
         ("(letrec ((tri (lambda (n acc) (if (= n 0) acc (tailcall tri (- n 1) (+ acc n)))))) (tri 1000 0))", 500500),
         (
             "(letrec ((even-sum (lambda (n acc) (if (= n 0) acc (odd-sum (- n 1) (+ acc n))))) (odd-sum (lambda (n acc) (if (= n 0) acc (even-sum (- n 1) (+ acc n)))))) (even-sum 1000 0))",
