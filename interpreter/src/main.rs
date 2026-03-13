@@ -284,7 +284,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
     loop {
         let instr = read_op(readword(&code, &mut pc)?)?;
-        dbg!(&instr, &pc, &code[pc - 1]);
+        // dbg!(&instr, &pc, &code[pc - 1]);
 
         debug_assert!(stack.len() <= DEBUG_MAX_STACK_SIZE, "stack overflow");
 
@@ -317,7 +317,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
             }
 
             Op::RETURN => {
-                dbg!(&control_stack);
+                // dbg!(&control_stack);
 
                 if control_stack.len() > 0
                     && check_boxed_closure_pointer(
@@ -329,11 +329,11 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
                 let val = stack.pop().ok_or(eyre!("No return value"))?;
 
-                dbg!(print_boxed(val.clone(), &heap[..])?);
+                // dbg!(print_boxed(val.clone(), &heap[..])?);
 
                 if control_stack.is_empty() {
-                    dbg!(&stack);
-                    dbg!(&heap[..10]);
+                    // dbg!(&stack);
+                    // dbg!(&heap[..10]);
                     return Ok(val);
                 }
 
@@ -358,7 +358,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 pc = new_pc;
                 stack_base_pointer = new_bp;
 
-                // dbg!(&code, &pc);
+                // // dbg!(&code, &pc);
 
                 stack.push(val);
             }
@@ -633,7 +633,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
             Op::LOAD_VAR => {
                 let stack_index: usize = readword(&code, &mut pc)?.try_into()?;
-                dbg!(&stack, &stack_index);
+                // dbg!(&stack, &stack_index);
 
                 let val: u64 = *(stack.get(stack_index + stack_base_pointer)
                     .ok_or(eyre!("Invalid variable load from bad position, tried to grab position {} from stack of length {}", stack_index + stack_base_pointer, stack.len()))?);
@@ -669,7 +669,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
             }
 
             Op::CONS => {
-                dbg!(&stack);
+                // dbg!(&stack);
                 let val1 = stack
                     .pop()
                     .ok_or(eyre!("Unexpected call to cons without arguments"))?;
@@ -914,7 +914,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 }
 
                 let pointer = read_boxed_pointer(string_pointer)?;
-                dbg!(&pointer);
+                // dbg!(&pointer);
                 let string_len = heap[pointer];
 
                 let string_position = read_boxed_number(string_position_boxed)?;
@@ -973,7 +973,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
 
                 let new_char = read_boxed_character(new_char_boxed)?;
 
-                dbg!(&heap[..4], &string_position, &new_char, &pointer);
+                // dbg!(&heap[..4], &string_position, &new_char, &pointer);
                 if string_position >= string_len {
                     return Err(eyre!(
                         "Attempted to read out of string bounds: position {string_position} in string of length {string_len}"
@@ -992,7 +992,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 heap[pointer + pos_word + 1] = u64::from_le_bytes(word_bytes);
 
                 stack.push(string_pointer);
-                dbg!(&heap[..4]);
+                // dbg!(&heap[..4]);
             }
 
             Op::STRING_APPEND => {
@@ -1131,7 +1131,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                     .ok_or(eyre!("Tried to funcall with no closure on stack"))?;
 
                 if !check_boxed_closure_pointer(boxed_closure_pointer) {
-                    dbg!(&stack);
+                    // dbg!(&stack);
                     return Err(eyre!("Invalid closure pointer {}", boxed_closure_pointer));
                 }
 
@@ -1175,7 +1175,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 let label_add: usize = heap[current_closure].try_into()?;
                 let jump_pos: usize = code[label_add].try_into()?;
 
-                dbg!(&stack, &jump_pos, &label_add);
+                // dbg!(&stack, &jump_pos, &label_add);
                 pc = jump_pos;
             }
 
@@ -1219,7 +1219,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                     .ok_or(eyre!("Tried to funcall with no closure on stack"))?;
 
                 if !check_boxed_closure_pointer(boxed_closure_pointer) {
-                    dbg!(&stack);
+                    // dbg!(&stack);
                     return Err(eyre!("Invalid closure pointer {}", boxed_closure_pointer));
                 }
 
@@ -1261,7 +1261,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                 let label_add: usize = heap[current_closure].try_into()?;
                 let jump_pos: usize = code[label_add].try_into()?;
 
-                dbg!(&stack, &jump_pos, &label_add);
+                // dbg!(&stack, &jump_pos, &label_add);
                 pc = jump_pos;
             }
 
@@ -1274,7 +1274,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
             Op::SET_DEFERRED => {
                 let n = readword(&code, &mut pc)?;
 
-                dbg!(&n, &control_stack, &heap[..10]);
+                // dbg!(&n, &control_stack, &heap[..10]);
                 for _i in 0..n {
                     let idx = control_stack
                         .pop()
@@ -1284,7 +1284,7 @@ fn interpret(code: Vec<u64>, heap: &mut Box<[u64; HEAP_SIZE]>) -> Result<u64> {
                     heap[idx] = *(stack.get(offset + stack_base_pointer)
                     .ok_or(eyre!("Invalid variable load from bad position, tried to grab position {} from stack of length {}", idx + stack_base_pointer, stack.len()))?);
                 }
-                dbg!(&heap[..10]);
+                // dbg!(&heap[..10]);
             }
 
             Op::PUSH_NIL => {
@@ -1373,7 +1373,7 @@ fn main() -> Result<()> {
 
     let ret = interpret(code, &mut heap)?;
 
-    // dbg!(ret);
+    // // dbg!(ret);
     let print_val = print_boxed(ret, &heap[..])?;
 
     println!("{}", print_val);
